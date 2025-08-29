@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>스마트 캘린더 - AI 일정 관리</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- App Header -->
+    <header class="app-header">
+        <div class="header-content">
+            <div class="logo">
+                <span class="logo-text">스마트 캘린더</span>
+            </div>
+            <div class="header-actions">
+                <button class="icon-btn" id="todayBtn">
+                    <i class="fas fa-calendar-day"></i>
+                </button>
+                <button class="icon-btn" id="todosBtn" title="할일 목록">
+                    <i class="fas fa-tasks"></i>
+                </button>
+                <button class="icon-btn" id="settingsBtn">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Calendar View -->
+        <div class="calendar-container">
+            <!-- Month Navigation -->
+            <div class="month-nav">
+                <button class="nav-arrow" id="prevMonth">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <h2 class="current-month" id="currentMonth">2024년 1월</h2>
+                <button class="nav-arrow" id="nextMonth">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+
+            <!-- Calendar Grid -->
+            <div class="calendar-grid" id="calendarGrid">
+                <div class="weekday">일</div>
+                <div class="weekday">월</div>
+                <div class="weekday">화</div>
+                <div class="weekday">수</div>
+                <div class="weekday">목</div>
+                <div class="weekday">금</div>
+                <div class="weekday">토</div>
+                <!-- Calendar days will be dynamically generated -->
+            </div>
+            
+            <!-- Calendar Legend -->
+            <div class="calendar-legend">
+                <div class="legend-item">
+                    <span class="legend-dot events"></span>
+                    <span>이벤트</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot todos"></span>
+                    <span>할일</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Event List -->
+        <div class="event-list-container">
+            <div class="section-header">
+                <h3>일정 & 할일</h3>
+                <span class="event-count" id="eventCount">0개</span>
+            </div>
+            <div class="event-list" id="eventList">
+                <!-- Events and todos will be dynamically generated -->
+            </div>
+        </div>
+    </main>
+
+    <!-- AI Input Section -->
+    <div class="ai-input-section">
+        <div class="ai-input-container">
+            <div class="ai-input-wrapper">
+                <textarea 
+                    class="ai-input" 
+                    id="aiInput" 
+                    placeholder="일정을 자연스럽게 입력하세요... (예: 내일 오후 2시에 회의가 있어)"
+                    rows="1"
+                ></textarea>
+                <button class="ai-send-btn" id="aiSendBtn">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+            <div class="ai-hint">
+                <i class="fas fa-info-circle"></i>
+                <span>AI가 일정을 자동으로 파악하여 캘린더에 추가합니다</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Event Detail Modal -->
+    <div class="modal" id="eventModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>일정 상세</h3>
+                <button class="modal-close" id="modalClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Event details will be dynamically generated -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Todo Recommendations Modal -->
+    <div class="modal" id="todoModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>할일 추천</h3>
+                <button class="modal-close" id="todoModalClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="todo-recommendations" id="todoRecommendations">
+                    <!-- Todo recommendations will be dynamically generated -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>AI가 일정을 분석하고 있습니다...</p>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="script.js"></script>
+</body>
+</html> 
