@@ -11,4 +11,6 @@ services:
         value: 10000
       - key: CLAUDE_API_KEY
         sync: false
-    healthCheckPath: /health 
+    healthCheckPath: /health
+    autoDeploy: true
+    plan: free 

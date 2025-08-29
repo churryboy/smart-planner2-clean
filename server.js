@@ -4,7 +4,7 @@ const path = require('path');
 const https = require('https');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000; // Match render.yaml port
 
 // CORS configuration for production
 const corsOptions = {
@@ -69,8 +69,10 @@ app.post('/api/claude', async (req, res) => {
     try {
         // Check if API key is available
         if (!CLAUDE_API_KEY) {
+            console.error('CLAUDE_API_KEY not set in environment variables');
             return res.status(500).json({ 
-                error: 'Claude API key not configured. Please set CLAUDE_API_KEY environment variable.' 
+                error: '백엔드 설정이 완료되지 않았습니다. CLAUDE_API_KEY 환경변수를 설정해주세요.',
+                details: 'Backend not fully configured. Please set CLAUDE_API_KEY environment variable in Render.'
             });
         }
 
@@ -168,7 +170,22 @@ app.post('/api/claude', async (req, res) => {
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-    res.json({ status: 'OK', timestamp: new Date().toISOString() });
+    res.json({ 
+        status: 'OK', 
+        timestamp: new Date().toISOString(),
+        port: PORT,
+        environment: process.env.NODE_ENV || 'development',
+        claudeConfigured: !!CLAUDE_API_KEY
+    });
+});
+
+// Test endpoint
+app.get('/test', (req, res) => {
+    res.json({ 
+        message: 'Backend is working!',
+        timestamp: new Date().toISOString(),
+        port: PORT
+    });
 });
 
 // Serve the main app
