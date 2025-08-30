@@ -608,6 +608,20 @@ function showEventDetail(event) {
     const dateObj = new Date(event.date);
     const dateDisplay = `${dateObj.getFullYear()}년 ${dateObj.getMonth() + 1}월 ${dateObj.getDate()}일`;
     
+    // Get relevant todos for this event
+    const relevantTodos = analyzeEventAndGetTodos(event);
+    const eventDate = new Date(event.date);
+    const recommendations = relevantTodos.map(todo => {
+        const todoDate = new Date(eventDate);
+        todoDate.setDate(todoDate.getDate() - todo.daysBefore);
+        
+        return {
+            ...todo,
+            dueDate: todoDate.toISOString().split('T')[0],
+            displayDate: formatDateForDisplay(todoDate)
+        };
+    });
+    
     modalBody.innerHTML = `
         <div style="margin-bottom: 20px;">
             <h4 style="margin-bottom: 8px; color: #FF5500;">${event.title}</h4>
@@ -623,20 +637,110 @@ function showEventDetail(event) {
                 <p style="color: #333; line-height: 1.6;">${event.description}</p>
             </div>
         ` : ''}
+        
+        <!-- Todo Recommendations Section -->
+        <div style="margin-top: 24px; border-top: 1px solid #eee; padding-top: 16px;">
+            <h5 style="margin-bottom: 16px; color: #333; font-size: 1rem;">
+                <i class="fas fa-tasks" style="margin-right: 8px; color: #FF5500;"></i>추천 할일
+            </h5>
+            <div style="max-height: 300px; overflow-y: auto;">
+                ${(() => {
+                    // Filter out todos that have already been added
+                    const availableRecommendations = recommendations.filter(todo => 
+                        !todos.some(t => t.recommendationId === todo.id && t.eventId === event.id)
+                    );
+                    
+                    // If no recommendations available, show a message
+                    if (availableRecommendations.length === 0) {
+                        return `
+                            <div style="text-align: center; padding: 20px; color: #666;">
+                                <i class="fas fa-check-circle" style="font-size: 2rem; color: #4CAF50; margin-bottom: 10px;"></i>
+                                <p>모든 추천 할일이 추가되었습니다!</p>
+                                <p style="font-size: 0.9rem; margin-top: 8px;">할일 목록에서 추가된 할일을 확인할 수 있습니다.</p>
+                            </div>
+                        `;
+                    }
+                    
+                    // Render only available recommendations with swipe functionality
+                    return availableRecommendations.map(todo => `
+                        <div class="todo-item swipeable" data-todo-id="${todo.id}" data-event-id="${event.id}" style="
+                            border: 1px solid #eee;
+                            border-radius: 8px;
+                            padding: 12px;
+                            margin-bottom: 8px;
+                            background: #fff;
+                            display: flex;
+                            align-items: center;
+                            gap: 12px;
+                            position: relative;
+                            overflow: hidden;
+                            touch-action: pan-y;
+                            cursor: grab;
+                        ">
+                            <!-- Swipe left indicator (add) -->
+                            <div class="swipe-indicator swipe-left" style="
+                                position: absolute;
+                                left: -100px;
+                                top: 0;
+                                bottom: 0;
+                                width: 100px;
+                                background: linear-gradient(90deg, #4CAF50, #45a049);
+                                color: white;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                font-size: 0.8rem;
+                                font-weight: 600;
+                                transition: left 0.3s ease;
+                            ">
+                                <i class="fas fa-plus" style="margin-right: 8px;"></i>추가
+                            </div>
+                            
+                            <!-- Swipe right indicator (remove) -->
+                            <div class="swipe-indicator swipe-right" style="
+                                position: absolute;
+                                right: -100px;
+                                top: 0;
+                                bottom: 0;
+                                width: 100px;
+                                background: linear-gradient(270deg, #ff4444, #e63939);
+                                color: white;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                font-size: 0.8rem;
+                                font-weight: 600;
+                                transition: right 0.3s ease;
+                            ">
+                                <i class="fas fa-trash" style="margin-right: 8px;"></i>삭제
+                            </div>
+                            
+                            <div class="todo-content" style="flex: 1; min-width: 0;">
+                                <div class="todo-title" style="font-weight: 600; color: #333; margin-bottom: 4px;">${todo.title}</div>
+                                <div class="todo-description" style="color: #666; font-size: 0.9rem; margin-bottom: 8px;">${todo.description}</div>
+                                <div class="todo-date" style="color: #888; font-size: 0.8rem;">📅 ${todo.displayDate}</div>
+                            </div>
+                            
+                            <!-- Swipe hint -->
+                            <div class="swipe-hint" style="
+                                color: #999;
+                                font-size: 0.7rem;
+                                text-align: center;
+                                padding: 8px;
+                                border: 1px dashed #ddd;
+                                border-radius: 6px;
+                                background: #f9f9f9;
+                            ">
+                                <div>← 추가</div>
+                                <div>삭제 →</div>
+                            </div>
+                        </div>
+                    `).join('');
+                })()}
+            </div>
+        </div>
+        
         <div style="margin-top: 24px; display: flex; gap: 8px;">
-            <button onclick="showTodoRecommendations('${event.id}')" style="
-                flex: 1;
-                padding: 12px;
-                background: #FF5500;
-                color: white;
-                border: none;
-                border-radius: 8px;
-                font-size: 0.9rem;
-                cursor: pointer;
-                margin-right: 8px;
-            ">
-                <i class="fas fa-tasks" style="margin-right: 8px;"></i>할일 추천
-            </button>
             <button onclick="deleteEvent('${event.id}')" style="
                 flex: 1;
                 padding: 12px;
@@ -653,6 +757,9 @@ function showEventDetail(event) {
     `;
     
     modal.classList.add('active');
+    
+    // Initialize swipe functionality for todo items
+    initializeSwipeGestures();
 }
 
 // Close modal
@@ -701,26 +808,41 @@ async function sendAIMessage() {
     try {
         const response = await callClaudeAPI(message);
         
+        console.log('🔧 AI Response received:', response);
+        
         if (response.success && response.event) {
+            console.log('🔧 Creating new event from response:', response.event);
+            
             // Add the event
             const newEvent = {
                 id: generateId(),
                 ...response.event
             };
             
+            console.log('🔧 New event object:', newEvent);
+            console.log('🔧 Events array before push (length):', events.length);
+            
             events.push(newEvent);
+            console.log('🔧 Events array after push (length):', events.length);
+            
+            console.log('🔧 Saving events...');
             saveEvents();
             
-            // Update calendar
+            console.log('🔧 Rendering calendar...');
             renderCalendar();
             
             // If event is today, update the list
             if (response.event.date === selectedDate.toISOString().split('T')[0]) {
+                console.log('🔧 Updating event list...');
                 updateEventList();
             }
             
             // Show success message
             showSuccessMessage(response.message || '일정이 추가되었습니다');
+            
+            console.log('🔧 Event creation completed successfully');
+        } else {
+            console.error('🔧 Invalid response format:', response);
         }
         
         // Clear input
@@ -741,9 +863,9 @@ async function sendAIMessage() {
 
 // Call Claude API through our Render backend
 async function callClaudeAPI(userMessage) {
-    // Use Render backend URL when not in development
-    const apiUrl = window.location.hostname === 'localhost' 
-        ? '/api/claude' 
+    // Use local backend for development, Render backend for production
+    const apiUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') 
+        ? 'http://localhost:8080/api/claude' 
         : 'https://smart-planner2-clean.onrender.com/api/claude';
     
     try {
@@ -771,8 +893,126 @@ async function callClaudeAPI(userMessage) {
     } catch (error) {
         console.error('Backend API error:', error);
         
+        // For local testing, provide a mock response
+        if (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            console.log('Using mock AI response for local testing');
+            return mockAIResponse(userMessage);
+        }
+        
         // Fallback: Show message that backend needs to be deployed
         throw new Error('백엔드 서버가 아직 배포되지 않았습니다. Render에 백엔드를 배포해주세요.');
+    }
+}
+
+// Mock AI response for local testing
+function mockAIResponse(userMessage) {
+    console.log('🔧 Mock AI called with message:', userMessage);
+    
+    // Parse Korean date format (e.g., "9월1일", "9월 3일", "내일", "다음주 월요일")
+    let eventDate = new Date();
+    let eventTime = null;
+    let isAllDay = true;
+    
+    // Check for specific Korean date patterns
+    const monthDayMatch = userMessage.match(/(\d+)월\s*(\d+)일/);
+    if (monthDayMatch) {
+        const month = parseInt(monthDayMatch[1]) - 1; // JavaScript months are 0-indexed
+        const day = parseInt(monthDayMatch[2]);
+        const currentYear = new Date().getFullYear();
+        
+        // If the month is in the past, assume next year
+        if (month < new Date().getMonth()) {
+            eventDate = new Date(currentYear + 1, month, day);
+        } else {
+            eventDate = new Date(currentYear, month, day);
+        }
+        
+        console.log('🔧 Parsed Korean date:', monthDayMatch[1] + '월', monthDayMatch[2] + '일', '→', eventDate.toISOString().split('T')[0]);
+    }
+    
+    // Check for time patterns
+    const timeMatch = userMessage.match(/(\d+)시/);
+    if (timeMatch) {
+        const hour = parseInt(timeMatch[1]);
+        eventTime = `${hour.toString().padStart(2, '0')}:00`;
+        isAllDay = false;
+        console.log('🔧 Parsed time:', hour + '시', '→', eventTime);
+    }
+    
+    // Check for specific keywords
+    if (userMessage.includes('시험') || userMessage.includes('exam') || userMessage.includes('토익')) {
+        return {
+            success: true,
+            event: {
+                title: userMessage.includes('토익') ? '토익 시험' : '시험',
+                date: eventDate.toISOString().split('T')[0],
+                time: eventTime,
+                description: userMessage.includes('토익') ? '토익 시험 준비 및 응시' : '시험 준비 및 응시',
+                allDay: isAllDay
+            },
+            message: '시험이 추가되었습니다'
+        };
+    } else if (userMessage.includes('회의') || userMessage.includes('meeting')) {
+        return {
+            success: true,
+            event: {
+                title: '회의',
+                date: eventDate.toISOString().split('T')[0],
+                time: eventTime || '14:00',
+                description: '팀 회의',
+                allDay: false
+            },
+            message: '회의가 추가되었습니다'
+        };
+    } else if (userMessage.includes('프로젝트') || userMessage.includes('project')) {
+        return {
+            success: true,
+            event: {
+                title: '프로젝트',
+                date: eventDate.toISOString().split('T')[0],
+                time: eventTime,
+                description: '프로젝트 진행',
+                allDay: isAllDay
+            },
+            message: '프로젝트가 추가되었습니다'
+        };
+    } else if (userMessage.includes('약속') || userMessage.includes('appointment')) {
+        return {
+            success: true,
+            event: {
+                title: '약속',
+                date: eventDate.toISOString().split('T')[0],
+                time: eventTime || '18:00',
+                description: userMessage,
+                allDay: false
+            },
+            message: '약속이 추가되었습니다'
+        };
+    } else if (userMessage.includes('음악')) {
+        return {
+            success: true,
+            event: {
+                title: '음악 시험',
+                date: eventDate.toISOString().split('T')[0],
+                time: eventTime,
+                description: '음악 시험 준비 및 응시',
+                allDay: isAllDay
+            },
+            message: '음악 시험이 추가되었습니다'
+        };
+    } else {
+        // Default response
+        return {
+            success: true,
+            event: {
+                title: userMessage.substring(0, 20) + '...',
+                date: eventDate.toISOString().split('T')[0],
+                time: eventTime,
+                description: userMessage,
+                allDay: isAllDay
+            },
+            message: '일정이 추가되었습니다'
+        };
     }
 }
 
@@ -1022,26 +1262,36 @@ function updateTodoRecommendationsUI(eventId) {
         };
     });
     
-    // Render recommendations
-    recommendationsContainer.innerHTML = recommendations.map(todo => {
-        const isAdded = todos.some(t => t.recommendationId === todo.id && t.eventId === eventId);
-        
+    // Filter out todos that have already been added
+    const availableRecommendations = recommendations.filter(todo => 
+        !todos.some(t => t.recommendationId === todo.id && t.eventId === eventId)
+    );
+    
+    // If no recommendations available, show a message
+    if (availableRecommendations.length === 0) {
+        recommendationsContainer.innerHTML = `
+            <div style="text-align: center; padding: 20px; color: #666;">
+                <i class="fas fa-check-circle" style="font-size: 2rem; color: #4CAF50; margin-bottom: 10px;"></i>
+                <p>모든 추천 할일이 추가되었습니다!</p>
+                <p style="font-size: 0.9rem; margin-top: 8px;">할일 목록에서 추가된 할일을 확인할 수 있습니다.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Render only available recommendations
+    recommendationsContainer.innerHTML = availableRecommendations.map(todo => {
         return `
-            <div class="todo-item ${isAdded ? 'added' : ''}" data-todo-id="${todo.id}">
+            <div class="todo-item" data-todo-id="${todo.id}">
                 <div class="todo-content">
                     <div class="todo-title">${todo.title}</div>
                     <div class="todo-description">${todo.description}</div>
                     <div class="todo-date">📅 ${todo.displayDate}</div>
                 </div>
                 <div class="todo-actions">
-                    ${isAdded ? 
-                        `<button class="todo-btn delete" onclick="removeTodo('${todo.id}', '${eventId}')">
-                            <i class="fas fa-trash"></i> 삭제
-                        </button>` :
-                        `<button class="todo-btn add" onclick="addTodo('${todo.id}', '${eventId}')">
-                            <i class="fas fa-plus"></i> 추가
-                        </button>`
-                    }
+                    <button class="todo-btn add" onclick="addTodo('${todo.id}', '${eventId}')">
+                        <i class="fas fa-plus"></i> 추가
+                    </button>
                 </div>
             </div>
         `;
@@ -1148,8 +1398,8 @@ function showAllTodos() {
         const eventTitle = event ? event.title : '알 수 없는 이벤트';
         
         return `
-            <div class="todo-item added" data-todo-id="${todo.id}">
-                <div class="todo-content">
+            <div class="todo-item added" data-todo-id="${todo.id}" style="display: flex; align-items: flex-start; gap: 12px;">
+                <div class="todo-content" style="flex: 1;">
                     <div class="todo-title">${todo.title}</div>
                     <div class="todo-description">${todo.description}</div>
                     <div class="todo-date">📅 ${todo.displayDate}</div>
@@ -1157,9 +1407,14 @@ function showAllTodos() {
                         📋 관련 이벤트: ${eventTitle}
                     </div>
                 </div>
-                <div class="todo-actions">
-                    <button class="todo-btn delete" onclick="removeTodo('${todo.recommendationId}', '${todo.eventId}')">
-                        <i class="fas fa-trash"></i> 삭제
+                <div class="todo-actions" style="flex-shrink: 0;">
+                    <button class="todo-btn delete" onclick="removeTodo('${todo.recommendationId}', '${todo.eventId}')" style="
+                        padding: 6px 10px;
+                        font-size: 0.75rem;
+                        min-width: auto;
+                        width: auto;
+                    ">
+                        <i class="fas fa-trash"></i>
                     </button>
                 </div>
             </div>
@@ -1183,8 +1438,8 @@ function showTodoDetail(todo) {
     
     // Render todo detail
     recommendationsContainer.innerHTML = `
-        <div class="todo-item added" data-todo-id="${todo.id}">
-            <div class="todo-content">
+        <div class="todo-item added" data-todo-id="${todo.id}" style="display: flex; align-items: flex-start; gap: 12px;">
+            <div class="todo-content" style="flex: 1;">
                 <div class="todo-title">${todo.title}</div>
                 <div class="todo-description">${todo.description}</div>
                 <div class="todo-date">📅 ${todo.displayDate}</div>
@@ -1195,9 +1450,14 @@ function showTodoDetail(todo) {
                     🏷️ 카테고리: ${getCategoryName(todo.category)}
                 </div>
             </div>
-            <div class="todo-actions">
-                <button class="todo-btn delete" onclick="removeTodo('${todo.recommendationId}', '${todo.eventId}')">
-                    <i class="fas fa-trash"></i> 삭제
+            <div class="todo-actions" style="flex-shrink: 0;">
+                <button class="todo-btn delete" onclick="removeTodo('${todo.recommendationId}', '${todo.eventId}')" style="
+                    padding: 6px 10px;
+                    font-size: 0.75rem;
+                    min-width: auto;
+                    width: auto;
+                ">
+                    <i class="fas fa-trash"></i>
                 </button>
             </div>
         </div>
@@ -1280,3 +1540,231 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style); 
+
+// Initialize swipe gestures for todo items
+function initializeSwipeGestures() {
+    const swipeableItems = document.querySelectorAll('.todo-item.swipeable');
+    
+    swipeableItems.forEach(item => {
+        let startX = 0;
+        let startY = 0;
+        let currentX = 0;
+        let isDragging = false;
+        let startTime = 0;
+        
+        // Touch events for mobile
+        item.addEventListener('touchstart', handleTouchStart, { passive: false });
+        item.addEventListener('touchmove', handleTouchMove, { passive: false });
+        item.addEventListener('touchend', handleTouchEnd, { passive: false });
+        
+        // Mouse events for desktop
+        item.addEventListener('mousedown', handleMouseStart);
+        item.addEventListener('mousemove', handleMouseMove);
+        item.addEventListener('mouseup', handleMouseEnd);
+        item.addEventListener('mouseleave', handleMouseEnd);
+        
+        function handleTouchStart(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            startX = touch.clientX;
+            startY = touch.clientY;
+            startTime = Date.now();
+            isDragging = true;
+            
+            item.style.transition = 'none';
+            item.style.transform = 'translateX(0)';
+        }
+        
+        function handleTouchMove(e) {
+            e.preventDefault();
+            if (!isDragging) return;
+            
+            const touch = e.touches[0];
+            currentX = touch.clientX - startX;
+            
+            // Limit horizontal movement
+            if (Math.abs(currentX) > 100) {
+                currentX = currentX > 0 ? 100 : -100;
+            }
+            
+            item.style.transform = `translateX(${currentX}px)`;
+            
+            // Show swipe indicators
+            const leftIndicator = item.querySelector('.swipe-left');
+            const rightIndicator = item.querySelector('.swipe-right');
+            
+            if (currentX < -50) {
+                leftIndicator.style.left = '0';
+            } else {
+                leftIndicator.style.left = '-100px';
+            }
+            
+            if (currentX > 50) {
+                rightIndicator.style.right = '0';
+            } else {
+                rightIndicator.style.right = '-100px';
+            }
+        }
+        
+        function handleTouchEnd(e) {
+            if (!isDragging) return;
+            isDragging = false;
+            
+            const endTime = Date.now();
+            const duration = endTime - startTime;
+            const velocity = Math.abs(currentX) / duration;
+            
+            item.style.transition = 'transform 0.3s ease';
+            
+            // Determine swipe action based on distance and velocity
+            if (Math.abs(currentX) > 80 || velocity > 0.5) {
+                if (currentX < -50) {
+                    // Swipe left - Add todo
+                    handleSwipeLeft(item);
+                } else if (currentX > 50) {
+                    // Swipe right - Remove todo
+                    handleSwipeRight(item);
+                }
+            } else {
+                // Reset position
+                item.style.transform = 'translateX(0)';
+            }
+            
+            // Hide indicators
+            const leftIndicator = item.querySelector('.swipe-left');
+            const rightIndicator = item.querySelector('.swipe-right');
+            leftIndicator.style.left = '-100px';
+            rightIndicator.style.right = '-100px';
+        }
+        
+        function handleMouseStart(e) {
+            e.preventDefault();
+            startX = e.clientX;
+            startY = e.clientY;
+            startTime = Date.now();
+            isDragging = true;
+            
+            item.style.transition = 'none';
+            item.style.transform = 'translateX(0)';
+        }
+        
+        function handleMouseMove(e) {
+            if (!isDragging) return;
+            
+            currentX = e.clientX - startX;
+            
+            // Limit horizontal movement
+            if (Math.abs(currentX) > 100) {
+                currentX = currentX > 0 ? 100 : -100;
+            }
+            
+            item.style.transform = `translateX(${currentX}px)`;
+            
+            // Show swipe indicators
+            const leftIndicator = item.querySelector('.swipe-left');
+            const rightIndicator = item.querySelector('.swipe-right');
+            
+            if (currentX < -50) {
+                leftIndicator.style.left = '0';
+            } else {
+                leftIndicator.style.left = '-100px';
+            }
+            
+            if (currentX > 50) {
+                rightIndicator.style.right = '0';
+            } else {
+                rightIndicator.style.right = '-100px';
+            }
+        }
+        
+        function handleMouseEnd(e) {
+            if (!isDragging) return;
+            isDragging = false;
+            
+            const endTime = Date.now();
+            const duration = endTime - startTime;
+            const velocity = Math.abs(currentX) / duration;
+            
+            item.style.transition = 'transform 0.3s ease';
+            
+            // Determine swipe action based on distance and velocity
+            if (Math.abs(currentX) > 80 || velocity > 0.5) {
+                if (currentX < -50) {
+                    // Swipe left - Add todo
+                    handleSwipeLeft(item);
+                } else if (currentX > 50) {
+                    // Swipe right - Remove todo
+                    handleSwipeRight(item);
+                }
+            } else {
+                // Reset position
+                item.style.transform = 'translateX(0)';
+            }
+            
+            // Hide indicators
+            const leftIndicator = item.querySelector('.swipe-left');
+            const rightIndicator = item.querySelector('.swipe-right');
+            leftIndicator.style.left = '-100px';
+            rightIndicator.style.right = '-100px';
+        }
+    });
+}
+
+// Handle swipe left (add todo)
+function handleSwipeLeft(item) {
+    const todoId = item.dataset.todoId;
+    const eventId = item.dataset.eventId;
+    
+    // Add the todo
+    addTodo(todoId, eventId);
+    
+    // Show success message
+    showSuccessMessage('캘린더에 추가되었습니다');
+    
+    // Animate the item out
+    item.style.transform = 'translateX(-100%)';
+    item.style.opacity = '0';
+    
+    // Remove the item after animation
+    setTimeout(() => {
+        item.remove();
+        
+        // Check if no more todos and show completion message
+        const remainingTodos = document.querySelectorAll('.todo-item.swipeable');
+        if (remainingTodos.length === 0) {
+            const container = item.parentElement;
+            container.innerHTML = `
+                <div style="text-align: center; padding: 20px; color: #666;">
+                    <i class="fas fa-check-circle" style="font-size: 2rem; color: #4CAF50; margin-bottom: 10px;"></i>
+                    <p>모든 추천 할일이 추가되었습니다!</p>
+                    <p style="font-size: 0.9rem; margin-top: 8px;">할일 목록에서 추가된 할일을 확인할 수 있습니다.</p>
+                </div>
+            `;
+        }
+    }, 300);
+}
+
+// Handle swipe right (remove todo)
+function handleSwipeRight(item) {
+    // Animate the item out
+    item.style.transform = 'translateX(100%)';
+    item.style.opacity = '0';
+    
+    // Remove the item after animation
+    setTimeout(() => {
+        item.remove();
+        
+        // Check if no more todos and show completion message
+        const remainingTodos = document.querySelectorAll('.todo-item.swipeable');
+        if (remainingTodos.length === 0) {
+            const container = item.parentElement;
+            container.innerHTML = `
+                <div style="text-align: center; padding: 20px; color: #666;">
+                    <i class="fas fa-check-circle" style="font-size: 2rem; color: #4CAF50; margin-bottom: 10px;"></i>
+                    <p>모든 추천 할일이 추가되었습니다!</p>
+                    <p style="font-size: 0.9rem; margin-top: 8px;">할일 목록에서 추가된 할일을 확인할 수 있습니다.</p>
+                </div>
+            `;
+        }
+    }, 300);
+} 

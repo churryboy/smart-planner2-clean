@@ -4,15 +4,17 @@ const path = require('path');
 const https = require('https');
 
 const app = express();
-const PORT = process.env.PORT || 10000; // Match render.yaml port
+const PORT = process.env.PORT || 8080; // Use 8080 for local development
 
-// CORS configuration for production
+// CORS configuration for production and development
 const corsOptions = {
     origin: [
         'https://smart-planner2.vercel.app',
         'https://smart-planner2-churryboys-projects.vercel.app',
         'http://localhost:3000',
-        'http://localhost:8080'
+        'http://localhost:8080',
+        'http://127.0.0.1:8080',
+        'null' // Allow file:// protocol for local testing
     ],
     credentials: true,
     optionsSuccessStatus: 200
@@ -69,10 +71,8 @@ app.post('/api/claude', async (req, res) => {
     try {
         // Check if API key is available
         if (!CLAUDE_API_KEY) {
-            console.error('CLAUDE_API_KEY not set in environment variables');
             return res.status(500).json({ 
-                error: '백엔드 설정이 완료되지 않았습니다. CLAUDE_API_KEY 환경변수를 설정해주세요.',
-                details: 'Backend not fully configured. Please set CLAUDE_API_KEY environment variable in Render.'
+                error: 'Claude API key not configured. Please set CLAUDE_API_KEY environment variable.' 
             });
         }
 
@@ -170,22 +170,7 @@ app.post('/api/claude', async (req, res) => {
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-    res.json({ 
-        status: 'OK', 
-        timestamp: new Date().toISOString(),
-        port: PORT,
-        environment: process.env.NODE_ENV || 'development',
-        claudeConfigured: !!CLAUDE_API_KEY
-    });
-});
-
-// Test endpoint
-app.get('/test', (req, res) => {
-    res.json({ 
-        message: 'Backend is working!',
-        timestamp: new Date().toISOString(),
-        port: PORT
-    });
+    res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
 // Serve the main app
