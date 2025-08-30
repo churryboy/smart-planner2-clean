@@ -32,7 +32,9 @@ const CLAUDE_API_ENDPOINT = 'https://api.anthropic.com/v1/messages';
 // Check if API key is configured
 if (!CLAUDE_API_KEY) {
     console.error('CLAUDE_API_KEY environment variable is not set!');
-    console.error('Please set your Claude API key in the environment variables.');
+    console.error("CLAUDE_API_KEY environment variable is not set!");
+    console.error("Please set your Claude API key in the environment variables.");
+    console.log("CORS updated for new Vercel domain");
 }
 
 // System prompt for calendar input
