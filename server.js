@@ -12,6 +12,8 @@ const corsOptions = {
         'https://smart-planner2.vercel.app',
         'https://smart-planner2-churryboys-projects.vercel.app',
         "https://smart-planner2-clean.vercel.app",
+        "https://smart-planner2-clean-dj3vk3ie6-churryboys-projects.vercel.app",
+        "https://smart-planner2-clean-gtfljykfw-churryboys-projects.vercel.app",
         'http://localhost:3000',
         'http://localhost:8080',
         'http://127.0.0.1:8080',
