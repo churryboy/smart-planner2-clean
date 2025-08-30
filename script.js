@@ -744,7 +744,7 @@ async function callClaudeAPI(userMessage) {
     // Use Render backend URL when not in development
     const apiUrl = window.location.hostname === 'localhost' 
         ? '/api/claude' 
-        : 'https://smart-calendar.onrender.com/api/claude';
+        : 'https://smart-planner2-clean.onrender.com/api/claude';
     
     try {
         const response = await fetch(apiUrl, {
