@@ -1351,6 +1351,9 @@ function removeTodo(recommendationId, eventId) {
     // Update calendar to show todo indicators
     renderCalendar();
 
+    // Update the event list/todo panel at the bottom
+    updateEventList();
+
     // Close the todo detail modal if it is open
     const todoModal = document.getElementById('todoModal');
     if (todoModal && todoModal.classList.contains('active')) {
