@@ -1190,9 +1190,82 @@ function analyzeEventAndGetTodos(event) {
     const description = (event.description || '').toLowerCase();
     const fullText = `${title} ${description}`;
     
-    console.log('Analyzing event:', { title, description, fullText });
+    console.log("🧠 Intelligent Event Analysis:", { title, description });;
     console.log('Available todo categories:', Object.keys(todoRecommendations));
     
+    // PERSONALIZED RECOMMENDATIONS - Much more relevant!
+
+    // Social Events - Meeting Friends
+    if (containsKeywords(fullText, ["친구", "friends", "만나", "meet", "모임", "gathering", "약속", "놀", "만남", "저녁"])) {
+        console.log("✅ Meeting with friends detected");
+        return [
+            {
+                id: "friends_1",
+                title: "장소 정하기",
+                description: "분위기 좋고 대화하기 편한 카페나 레스토랑 찾기",
+                category: "planning",
+                daysBefore: 3
+            },
+            {
+                id: "friends_2",
+                title: "예약하기",
+                description: "인원수에 맞춰 미리 예약하기",
+                category: "coordination",
+                daysBefore: 2
+            },
+            {
+                id: "friends_3",
+                title: "친구들에게 연락",
+                description: "시간과 장소 확정해서 알려주기",
+                category: "communication",
+                daysBefore: 1
+            },
+            {
+                id: "friends_4",
+                title: "교통편 확인",
+                description: "대중교통 시간이나 주차 가능 여부 확인",
+                category: "logistical",
+                daysBefore: 1
+            }
+        ];
+    }
+
+    // Math Exam - Highly Specific
+    if (containsKeywords(fullText, ["수학", "math", "산수", "대수", "기하", "미적분"]) && 
+        containsKeywords(fullText, ["시험", "test", "exam", "평가", "고사"])) {
+        console.log("✅ Math exam detected - highly relevant todos");
+        return [
+            {
+                id: "math_1",
+                title: "공식 정리하기",
+                description: "시험 범위의 중요 공식들 한 장에 정리",
+                category: "study",
+                daysBefore: 5
+            },
+            {
+                id: "math_2",
+                title: "계산 실수 체크리스트",
+                description: "자주 하는 실수들 정리해서 주의하기",
+                category: "review",
+                daysBefore: 3
+            },
+            {
+                id: "math_3",
+                title: "응용문제 연습",
+                description: "교과서와 문제집의 고난도 문제 풀기",
+                category: "practice",
+                daysBefore: 2
+            },
+            {
+                id: "math_4",
+                title: "계산기 확인",
+                description: "허용되면 계산기 배터리와 작동 확인",
+                category: "logistical",
+                daysBefore: 1
+            }
+        ];
+    }
+
     // Check for Korean school-related event types and return relevant todos
     if (containsKeywords(fullText, ['시험', 'exam', '중간고사', '기말고사', '모의고사', '수능', '학력평가'])) {
         console.log('✅ Matched EXAM category');
