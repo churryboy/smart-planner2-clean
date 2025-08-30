@@ -1340,7 +1340,7 @@ function addTodo(recommendationId, eventId) {
     showSuccessMessage('할일이 추가되었습니다');
     
     // Update the todo recommendations UI to show the change
-    updateTodoRecommendationsUI(eventId);
+    // updateTodoRecommendationsUI(eventId);
 }
 
 // Remove todo from user's list
@@ -1350,12 +1350,18 @@ function removeTodo(recommendationId, eventId) {
     
     // Update calendar to show todo indicators
     renderCalendar();
+
+    // Close the todo detail modal if it is open
+    const todoModal = document.getElementById('todoModal');
+    if (todoModal && todoModal.classList.contains('active')) {
+        todoModal.classList.remove('active');
+    }
     
     // Show success message
-    showSuccessMessage('할일이 삭제되었습니다');
+    // showSuccessMessage('할일이 삭제되었습니다');
     
     // Update the todo recommendations UI to show the change
-    updateTodoRecommendationsUI(eventId);
+    // updateTodoRecommendationsUI(eventId);
 }
 
 // Format date for display
