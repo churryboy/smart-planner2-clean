@@ -112,4 +112,4 @@ MIT License
 
 **개발자**: Smart Calendar Team  
 **버전**: 1.0.0  
-**최종 업데이트**: 2024년 8월 
+**최종 업데이트**: 2024년 8월 # Force Render redeploy - Sat Aug 30 22:57:36 KST 2025
