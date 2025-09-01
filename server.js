@@ -18,6 +18,8 @@ const corsOptions = {
         // Define allowed origins
         const allowedOrigins = [
             /^https:\/\/smart-planner2.*\.vercel\.app$/,  // Any Vercel deployment
+            /^https:\/\/smart-planner2.*\.onrender\.com$/,  // Any Render deployment
+            'https://smart-planner2-clean.onrender.com',  // Specific Render URL
             /^http:\/\/localhost:\d+$/,                   // Any localhost port
             /^http:\/\/127\.0\.0\.1:\d+$/,               // Any 127.0.0.1 port
             /^file:\/\/.*$/                              // File protocol
