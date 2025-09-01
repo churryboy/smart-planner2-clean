@@ -216,6 +216,12 @@ app.post('/api/claude-vision', async (req, res) => {
         
         // Use provided media type or default to jpeg
         const imageMediaType = mediaType || 'image/jpeg';
+        
+        console.log('📷 Vision API called with:');
+        console.log('- Message length:', message.length);
+        console.log('- Image data length:', image.length);
+        console.log('- Media type:', imageMediaType);
+        console.log('- API Key configured:', !!CLAUDE_API_KEY);
 
         const requestData = JSON.stringify({
             model: 'claude-3-5-sonnet-20241022',
