@@ -1901,16 +1901,23 @@ async function handleImageUpload(event) {
 async function processImageForMobile(file) {
     console.log('🔧 Processing image for mobile compatibility...');
     
-    // Check if image is too large (mobile cameras often produce huge images)
-    const MAX_SIZE = 2 * 1024 * 1024; // 2MB limit
-    const MAX_DIMENSION = 1568; // Claude's recommended max dimension
+    // Detect if mobile device
+    const isMobile = navigator.userAgent.includes('Mobile') || navigator.userAgent.includes('Android') || navigator.userAgent.includes('iPhone');
     
-    if (file.size > MAX_SIZE) {
-        console.log('⚠️ Image too large, resizing...', file.size, 'bytes');
+    // More aggressive limits for mobile
+    const MAX_SIZE = isMobile ? 500 * 1024 : 1 * 1024 * 1024; // 500KB for mobile, 1MB for desktop
+    const MAX_DIMENSION = isMobile ? 800 : 1200; // Smaller for mobile
+    
+    console.log('📱 Device type:', isMobile ? 'Mobile' : 'Desktop');
+    console.log('📏 Size limits:', MAX_SIZE, 'bytes, max dimension:', MAX_DIMENSION);
+    
+    // Always resize mobile images to ensure compatibility
+    if (isMobile || file.size > MAX_SIZE) {
+        console.log('⚠️ Processing needed - Mobile device or large file:', file.size, 'bytes');
         return await resizeImage(file, MAX_DIMENSION);
     }
     
-    // Check image dimensions
+    // Check image dimensions for desktop
     const dimensions = await getImageDimensions(file);
     console.log('📐 Image dimensions:', dimensions.width, 'x', dimensions.height);
     
@@ -1986,7 +1993,7 @@ function resizeImage(file, maxDimension) {
                 } else {
                     reject(new Error('Failed to resize image'));
                 }
-            }, file.type || 'image/jpeg', 0.9); // 90% quality
+            }, file.type || 'image/jpeg', 0.5); // 50% quality for mobile compatibility
         };
         
         img.onerror = () => {
