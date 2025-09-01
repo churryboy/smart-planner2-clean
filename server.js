@@ -282,6 +282,7 @@ app.post('/api/claude-vision', async (req, res) => {
         console.log('- Image data length:', image.length);
         console.log('- Media type:', imageMediaType);
         console.log('- API Key configured:', !!CLAUDE_API_KEY);
+        console.log('- Image data preview:', image.substring(0, 50) + '...');
 
         const requestData = JSON.stringify({
             model: 'claude-3-5-sonnet-20241022',
@@ -310,12 +311,46 @@ app.post('/api/claude-vision', async (req, res) => {
 
         console.log('📷 Sending image to Claude API for OCR...');
 
-        const claudeResponse = await makeClaudeRequest(requestData);
+        // Implement retry logic for API overload
+        let claudeResponse;
+        let retryCount = 0;
+        const maxRetries = 3;
+        
+        while (retryCount < maxRetries) {
+            try {
+                claudeResponse = await makeClaudeRequest(requestData);
+                break; // Success, exit retry loop
+            } catch (error) {
+                retryCount++;
+                
+                if (error.message.includes('overloaded') || error.message.includes('529')) {
+                    console.log(`⏳ Claude API overloaded, retry ${retryCount}/${maxRetries} in ${retryCount * 2}s...`);
+                    
+                    if (retryCount < maxRetries) {
+                        // Exponential backoff: wait 2s, 4s, 6s
+                        await new Promise(resolve => setTimeout(resolve, retryCount * 2000));
+                        continue;
+                    } else {
+                        // Max retries reached, use fallback
+                        console.log('🔄 Max retries reached, using fallback OCR processing...');
+                        throw new Error('FALLBACK_NEEDED');
+                    }
+                } else {
+                    // Other error, don't retry
+                    throw error;
+                }
+            }
+        }
         
         console.log('✅ Claude Vision API response received');
         
         // Extract the response content
         const responseContent = claudeResponse.content[0].text;
+        
+        console.log('📋 Claude extracted text from image:');
+        console.log('---START TEXT---');
+        console.log(responseContent);
+        console.log('---END TEXT---');
         
         try {
             // Parse the JSON response from Claude
@@ -354,10 +389,24 @@ app.post('/api/claude-vision', async (req, res) => {
 
     } catch (error) {
         console.error('Claude Vision API error:', error);
-        res.status(500).json({ 
-            error: 'Failed to process image with Claude API',
-            details: error.message 
-        });
+        
+        // Handle Claude API overload and fallback
+        if (error.message === 'FALLBACK_NEEDED' || error.message.includes('overloaded') || error.message.includes('529')) {
+            console.log('🔄 Using intelligent fallback for image processing...');
+            
+            // Return a fallback response that triggers client-side processing
+            res.json({
+                success: false,
+                fallback: true,
+                error: 'CLAUDE_OVERLOADED',
+                message: '이미지를 클라이언트에서 처리합니다...'
+            });
+        } else {
+            res.status(500).json({ 
+                error: 'Failed to process image with Claude API',
+                details: error.message 
+            });
+        }
     }
 });
 
