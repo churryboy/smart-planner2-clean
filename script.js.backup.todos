@@ -4,197 +4,13 @@ let selectedDate = new Date();
 let events = [];
 let todos = [];
 let currentEventForTodos = null;
-let preventTodoModalReopen = false;
 
 // Korean month names
 const monthNames = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
 const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
 
-// HIGHLY PERSONALIZED TODO RECOMMENDATIONS
+// Todo recommendations data - Korean Middle/High School Student Focused
 const todoRecommendations = {
-    // Social Events - Meeting Friends
-    meeting_friends: [
-        {
-            id: 'friends_1',
-            title: '장소 정하기',
-            description: '분위기 좋고 대화하기 편한 카페나 레스토랑 찾기',
-            category: 'planning',
-            daysBefore: 3
-        },
-        {
-            id: 'friends_2',
-            title: '예약하기',
-            description: '인원수에 맞춰 미리 예약하기',
-            category: 'coordination',
-            daysBefore: 2
-        },
-        {
-            id: 'friends_3',
-            title: '친구들에게 시간/장소 공유',
-            description: '카톡으로 만날 시간과 장소 정확히 알리기',
-            category: 'communication',
-            daysBefore: 1
-        },
-        {
-            id: 'friends_4',
-            title: '교통편 확인',
-            description: '대중교통 시간이나 주차 가능 여부 확인',
-            category: 'logistical',
-            daysBefore: 1
-        }
-    ],
-    
-    // Dating & Romance
-    date_event: [
-        {
-            id: 'date_1',
-            title: '데이트 코스 계획',
-            description: '식사, 영화, 산책 등 하루 동선 짜기',
-            category: 'planning',
-            daysBefore: 3
-        },
-        {
-            id: 'date_2',
-            title: '레스토랑 예약',
-            description: '분위기 좋은 곳으로 미리 예약하기',
-            category: 'coordination',
-            daysBefore: 2
-        },
-        {
-            id: 'date_3',
-            title: '날씨 확인',
-            description: '야외 활동이 있다면 날씨 체크하기',
-            category: 'information',
-            daysBefore: 1
-        },
-        {
-            id: 'date_4',
-            title: '옷 준비하기',
-            description: '깔끔하고 상황에 맞는 옷 준비',
-            category: 'preparation',
-            daysBefore: 1
-        }
-    ],
-    
-    // Birthday & Parties
-    birthday_party: [
-        {
-            id: 'bday_1',
-            title: '선물 준비하기',
-            description: '받는 사람이 좋아할 만한 선물 고르기',
-            category: 'preparation',
-            daysBefore: 3
-        },
-        {
-            id: 'bday_2',
-            title: '케이크 주문/준비',
-            description: '생일 케이크나 특별한 디저트 준비',
-            category: 'coordination',
-            daysBefore: 2
-        },
-        {
-            id: 'bday_3',
-            title: '파티 장소 꾸미기',
-            description: '풍선, 가랜드 등 파티 장식 준비',
-            category: 'preparation',
-            daysBefore: 1
-        },
-        {
-            id: 'bday_4',
-            title: '음식/음료 준비',
-            description: '파티에 필요한 음식과 음료 준비',
-            category: 'logistical',
-            daysBefore: 1
-        }
-    ],
-    
-    // Study & Academic (Subject-Specific)
-    math_test: [
-        {
-            id: 'math_1',
-            title: '공식 정리하기',
-            description: '시험 범위의 중요 공식들 한 장에 정리',
-            category: 'study',
-            daysBefore: 5
-        },
-        {
-            id: 'math_2',
-            title: '계산 실수 체크리스트',
-            description: '자주 하는 실수들 정리해서 주의하기',
-            category: 'review',
-            daysBefore: 3
-        },
-        {
-            id: 'math_3',
-            title: '응용문제 연습',
-            description: '교과서와 문제집의 고난도 문제 풀기',
-            category: 'practice',
-            daysBefore: 2
-        },
-        {
-            id: 'math_4',
-            title: '계산기 확인',
-            description: '허용되면 계산기 배터리와 작동 확인',
-            category: 'logistical',
-            daysBefore: 1
-        }
-    ],
-    
-    english_test: [
-        {
-            id: 'eng_1',
-            title: '단어장 만들기',
-            description: '시험 범위 단어와 뜻 정리하기',
-            category: 'study',
-            daysBefore: 5
-        },
-        {
-            id: 'eng_2',
-            title: '문법 규칙 정리',
-            description: '헷갈리는 문법 포인트 예문과 함께 정리',
-            category: 'study',
-            daysBefore: 4
-        },
-        {
-            id: 'eng_3',
-            title: '리스닝 연습',
-            description: '교재 MP3로 듣기 연습하기',
-            category: 'practice',
-            daysBefore: 2
-        },
-        {
-            id: 'eng_4',
-            title: '작문 연습',
-            description: '자주 나오는 주제로 영작 연습',
-            category: 'practice',
-            daysBefore: 2
-        }
-    ],
-    
-    science_test: [
-        {
-            id: 'sci_1',
-            title: '실험 과정 정리',
-            description: '중요 실험의 과정과 결과 정리하기',
-            category: 'study',
-            daysBefore: 5
-        },
-        {
-            id: 'sci_2',
-            title: '그림/도표 암기',
-            description: '교과서의 중요 그림과 도표 그려보기',
-            category: 'practice',
-            daysBefore: 3
-        },
-        {
-            id: 'sci_3',
-            title: '용어 정리',
-            description: '과학 용어와 정확한 정의 암기',
-            category: 'study',
-            daysBefore: 2
-        }
-    ],
-    
     // School exam related todos
     exam: [
         {
@@ -447,364 +263,7 @@ const todoRecommendations = {
         }
     ],
     
-    // Social Events - Meeting Friends
-    meeting_friends: [
-        {
-            id: 'friends_1',
-            title: '장소 정하기',
-            description: '분위기 좋고 대화하기 편한 카페나 레스토랑 찾기',
-            category: 'planning',
-            daysBefore: 3
-        },
-        {
-            id: 'friends_2',
-            title: '예약하기',
-            description: '인원수에 맞춰 미리 예약하기',
-            category: 'coordination',
-            daysBefore: 2
-        },
-        {
-            id: 'friends_3',
-            title: '친구들에게 시간/장소 공유',
-            description: '카톡으로 만날 시간과 장소 정확히 알리기',
-            category: 'communication',
-            daysBefore: 1
-        },
-        {
-            id: 'friends_4',
-            title: '교통편 확인',
-            description: '대중교통 시간이나 주차 가능 여부 확인',
-            category: 'logistical',
-            daysBefore: 1
-        }
-    ],
-    
-    // Dating & Romance
-    date_event: [
-        {
-            id: 'date_1',
-            title: '데이트 코스 계획',
-            description: '식사, 영화, 산책 등 하루 동선 짜기',
-            category: 'planning',
-            daysBefore: 3
-        },
-        {
-            id: 'date_2',
-            title: '레스토랑 예약',
-            description: '분위기 좋은 곳으로 미리 예약하기',
-            category: 'coordination',
-            daysBefore: 2
-        },
-        {
-            id: 'date_3',
-            title: '날씨 확인',
-            description: '야외 활동이 있다면 날씨 체크하기',
-            category: 'information',
-            daysBefore: 1
-        },
-        {
-            id: 'date_4',
-            title: '옷 준비하기',
-            description: '깔끔하고 상황에 맞는 옷 준비',
-            category: 'preparation',
-            daysBefore: 1
-        }
-    ],
-    
-    // Birthday & Parties
-    birthday_party: [
-        {
-            id: 'bday_1',
-            title: '선물 준비하기',
-            description: '받는 사람이 좋아할 만한 선물 고르기',
-            category: 'preparation',
-            daysBefore: 3
-        },
-        {
-            id: 'bday_2',
-            title: '케이크 주문/준비',
-            description: '생일 케이크나 특별한 디저트 준비',
-            category: 'coordination',
-            daysBefore: 2
-        },
-        {
-            id: 'bday_3',
-            title: '파티 장소 꾸미기',
-            description: '풍선, 가랜드 등 파티 장식 준비',
-            category: 'preparation',
-            daysBefore: 1
-        },
-        {
-            id: 'bday_4',
-            title: '음식/음료 준비',
-            description: '파티에 필요한 음식과 음료 준비',
-            category: 'logistical',
-            daysBefore: 1
-        }
-    ],
-    
-    // Sports & Physical Activities
-    sports_event: [
-        {
-            id: 'sport_1',
-            title: '운동복/장비 준비',
-            description: '운동화, 운동복, 필요한 장비 체크',
-            category: 'preparation',
-            daysBefore: 1
-        },
-        {
-            id: 'sport_2',
-            title: '몸 컨디션 조절',
-            description: '무리한 운동 피하고 스트레칭하기',
-            category: 'health',
-            daysBefore: 1
-        },
-        {
-            id: 'sport_3',
-            title: '음료/간식 준비',
-            description: '물, 스포츠음료, 에너지바 준비',
-            category: 'logistical',
-            daysBefore: 1
-        },
-        {
-            id: 'sport_4',
-            title: '장소/시간 확인',
-            description: '운동 장소와 집합 시간 재확인',
-            category: 'information',
-            daysBefore: 1
-        }
-    ],
-    
-    // Job & Career
-    job_interview: [
-        {
-            id: 'job_1',
-            title: '회사 조사하기',
-            description: '회사 홈페이지, 뉴스, 비전 등 조사',
-            category: 'research',
-            daysBefore: 3
-        },
-        {
-            id: 'job_2',
-            title: '예상 질문 준비',
-            description: '자기소개, 지원동기 등 답변 준비',
-            category: 'preparation',
-            daysBefore: 2
-        },
-        {
-            id: 'job_3',
-            title: '면접 복장 준비',
-            description: '깔끔한 정장이나 비즈니스 캐주얼 준비',
-            category: 'preparation',
-            daysBefore: 1
-        },
-        {
-            id: 'job_4',
-            title: '서류/포트폴리오',
-            description: '이력서, 자격증 사본 등 필요 서류 준비',
-            category: 'logistical',
-            daysBefore: 1
-        },
-        {
-            id: 'job_5',
-            title: '면접장 위치 확인',
-            description: '위치와 교통편, 소요시간 확인',
-            category: 'information',
-            daysBefore: 1
-        }
-    ],
-    
-    // Travel & Vacation
-    travel: [
-        {
-            id: 'travel_1',
-            title: '숙소 예약',
-            description: '호텔이나 숙박시설 예약 확인',
-            category: 'coordination',
-            daysBefore: 7
-        },
-        {
-            id: 'travel_2',
-            title: '교통편 예약',
-            description: '기차표, 버스표, 항공권 등 예약',
-            category: 'coordination',
-            daysBefore: 5
-        },
-        {
-            id: 'travel_3',
-            title: '여행 일정 짜기',
-            description: '가고 싶은 곳과 동선 계획하기',
-            category: 'planning',
-            daysBefore: 3
-        },
-        {
-            id: 'travel_4',
-            title: '짐 싸기',
-            description: '날씨에 맞는 옷과 필수품 챙기기',
-            category: 'preparation',
-            daysBefore: 1
-        },
-        {
-            id: 'travel_5',
-            title: '여행 서류 확인',
-            description: '신분증, 예약 확인서 등 챙기기',
-            category: 'logistical',
-            daysBefore: 1
-        }
-    ],
-    
-    // Health & Medical
-    hospital_appointment: [
-        {
-            id: 'hosp_1',
-            title: '진료 예약 확인',
-            description: '예약 시간과 진료과 확인하기',
-            category: 'information',
-            daysBefore: 1
-        },
-        {
-            id: 'hosp_2',
-            title: '보험증/신분증',
-            description: '건강보험증과 신분증 준비',
-            category: 'logistical',
-            daysBefore: 1
-        },
-        {
-            id: 'hosp_3',
-            title: '증상 정리하기',
-            description: '의사에게 설명할 증상들 메모',
-            category: 'preparation',
-            daysBefore: 1
-        },
-        {
-            id: 'hosp_4',
-            title: '검사 전 주의사항',
-            description: '금식 등 검사 전 지켜야 할 사항 확인',
-            category: 'health',
-            daysBefore: 1
-        }
-    ],
-    
-    // Family Events
-    family_gathering: [
-        {
-            id: 'fam_1',
-            title: '선물 준비',
-            description: '어른들께 드릴 선물이나 과일 준비',
-            category: 'preparation',
-            daysBefore: 2
-        },
-        {
-            id: 'fam_2',
-            title: '교통편 확인',
-            description: '이동 수단과 출발 시간 확인',
-            category: 'logistical',
-            daysBefore: 1
-        },
-        {
-            id: 'fam_3',
-            title: '옷 준비',
-            description: '단정한 옷 준비하기',
-            category: 'preparation',
-            daysBefore: 1
-        },
-        {
-            id: 'fam_4',
-            title: '용돈 준비',
-            description: '조카들 용돈이나 현금 준비',
-            category: 'logistical',
-            daysBefore: 1
-        }
-    ],
-    
-    // Subject-specific study todos
-    math_test: [
-        {
-            id: 'math_1',
-            title: '공식 정리하기',
-            description: '시험 범위의 중요 공식들 한 장에 정리',
-            category: 'study',
-            daysBefore: 5
-        },
-        {
-            id: 'math_2',
-            title: '계산 실수 체크리스트',
-            description: '자주 하는 실수들 정리해서 주의하기',
-            category: 'review',
-            daysBefore: 3
-        },
-        {
-            id: 'math_3',
-            title: '응용문제 연습',
-            description: '교과서와 문제집의 고난도 문제 풀기',
-            category: 'practice',
-            daysBefore: 2
-        },
-        {
-            id: 'math_4',
-            title: '계산기 확인',
-            description: '허용되면 계산기 배터리와 작동 확인',
-            category: 'logistical',
-            daysBefore: 1
-        }
-    ],
-    
-    english_test: [
-        {
-            id: 'eng_1',
-            title: '단어장 만들기',
-            description: '시험 범위 단어와 뜻 정리하기',
-            category: 'study',
-            daysBefore: 5
-        },
-        {
-            id: 'eng_2',
-            title: '문법 규칙 정리',
-            description: '헷갈리는 문법 포인트 예문과 함께 정리',
-            category: 'study',
-            daysBefore: 4
-        },
-        {
-            id: 'eng_3',
-            title: '리스닝 연습',
-            description: '교재 MP3로 듣기 연습하기',
-            category: 'practice',
-            daysBefore: 2
-        },
-        {
-            id: 'eng_4',
-            title: '작문 연습',
-            description: '자주 나오는 주제로 영작 연습',
-            category: 'practice',
-            daysBefore: 2
-        }
-    ],
-    
-    science_test: [
-        {
-            id: 'sci_1',
-            title: '실험 과정 정리',
-            description: '중요 실험의 과정과 결과 정리하기',
-            category: 'study',
-            daysBefore: 5
-        },
-        {
-            id: 'sci_2',
-            title: '그림/도표 암기',
-            description: '교과서의 중요 그림과 도표 그려보기',
-            category: 'practice',
-            daysBefore: 3
-        },
-        {
-            id: 'sci_3',
-            title: '용어 정리',
-            description: '과학 용어와 정확한 정의 암기',
-            category: 'study',
-            daysBefore: 2
-        }
-    ],
-    
-    // Default - More Intelligent and Relevant
+    // Default generic todos for unknown event types
     default: [
         {
             id: 'default_1',
@@ -832,20 +291,11 @@ const todoRecommendations = {
 
 // Initialize the app
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🚀 App initializing...');
     initializeCalendar();
     initializeEventHandlers();
     loadEvents();
     loadTodos();
     updateEventList();
-    
-    // Ensure calendar view is shown and properly initialized
-    console.log('🔧 Setting up initial view...');
-    showCalendarView();
-    
-    // Set initial button state - calendar view is default
-    document.getElementById('calendarViewBtn').classList.add('active');
-    console.log('✅ App initialization complete');
 });
 
 // Initialize calendar
@@ -869,10 +319,8 @@ function initializeEventHandlers() {
         updateMonthDisplay();
     });
 
-    // Calendar view button
-    document.getElementById('calendarViewBtn').addEventListener('click', () => {
-        showCalendarView();
-        // Go to today
+    // Today button
+    document.getElementById('todayBtn').addEventListener('click', () => {
         currentDate = new Date();
         selectedDate = new Date();
         renderCalendar();
@@ -880,14 +328,12 @@ function initializeEventHandlers() {
         updateEventList();
     });
 
-    // Todo list view button
-    document.getElementById('todoListViewBtn').addEventListener('click', showTodoListView);
+    // Todos button
+    document.getElementById('todosBtn').addEventListener('click', showAllTodos);
 
     // AI Input
     const aiInput = document.getElementById('aiInput');
     const aiSendBtn = document.getElementById('aiSendBtn');
-    
-    console.log('🔧 AI Input elements:', { aiInput: !!aiInput, aiSendBtn: !!aiSendBtn });
 
     // Auto-resize textarea
     aiInput.addEventListener('input', () => {
@@ -1148,10 +594,7 @@ function updateEventList() {
             <div class="event-type">✅</div>
         `;
         
-        todoItem.addEventListener('click', () => {
-            console.log('📋 Todo item clicked:', todo.title);
-            showTodoDetail(todo);
-        });
+        todoItem.addEventListener('click', () => showTodoDetail(todo));
         eventList.appendChild(todoItem);
     });
 }
@@ -1339,25 +782,6 @@ function closeTodoModal() {
     console.log('Todo modal closed');
 }
 
-// Show calendar view
-function showCalendarView() {
-    console.log('📅 Showing calendar view');
-    document.getElementById('calendarView').style.display = 'block';
-    document.getElementById('todoListView').style.display = 'none';
-    document.getElementById('calendarViewBtn').classList.add('active');
-    document.getElementById('todoListViewBtn').classList.remove('active');
-}
-
-// Show todo list view
-function showTodoListView() {
-    console.log('📋 Showing todo list view');
-    document.getElementById('calendarView').style.display = 'none';
-    document.getElementById('todoListView').style.display = 'block';
-    document.getElementById('calendarViewBtn').classList.remove('active');
-    document.getElementById('todoListViewBtn').classList.add('active');
-    showAllTodos();
-}
-
 // Delete event
 function deleteEvent(eventId) {
     events = events.filter(event => event.id !== eventId);
@@ -1388,8 +812,6 @@ async function sendAIMessage() {
         
         if (response.success && response.event) {
             console.log('🔧 Creating new event from response:', response.event);
-            console.log('🔧 Date from AI:', response.event.date);
-            console.log('🔧 Today for comparison:', new Date().toISOString().split('T')[0]);
             
             // Add the event
             const newEvent = {
@@ -1442,9 +864,8 @@ async function sendAIMessage() {
 // Call Claude API through our Render backend
 async function callClaudeAPI(userMessage) {
     // Use local backend for development, Render backend for production
-        // Always use Render backend - no more Vercel CORS issues!
-    const apiUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:')
-        ? 'http://localhost:10000/api/claude'
+    const apiUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') 
+        ? 'http://localhost:8080/api/claude' 
         : 'https://smart-planner2-clean.onrender.com/api/claude';
     
     try {
@@ -1483,14 +904,6 @@ async function callClaudeAPI(userMessage) {
     }
 }
 
-// Helper function to format date without timezone issues
-function formatDateLocal(date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-}
-
 // Mock AI response for local testing
 function mockAIResponse(userMessage) {
     console.log('🔧 Mock AI called with message:', userMessage);
@@ -1514,8 +927,7 @@ function mockAIResponse(userMessage) {
             eventDate = new Date(currentYear, month, day);
         }
         
-        console.log('🔧 Parsed Korean date:', monthDayMatch[1] + '월', monthDayMatch[2] + '일', '→', 
-            `${eventDate.getFullYear()}-${String(eventDate.getMonth() + 1).padStart(2, '0')}-${String(eventDate.getDate()).padStart(2, '0')}`);
+        console.log('🔧 Parsed Korean date:', monthDayMatch[1] + '월', monthDayMatch[2] + '일', '→', eventDate.toISOString().split('T')[0]);
     }
     
     // Check for time patterns
@@ -1695,12 +1107,6 @@ function showTodoRecommendations(eventId) {
     
     // Wait a moment for the event modal to close, then open todo modal
     setTimeout(() => {
-        // Check if modal reopening is prevented
-        if (preventTodoModalReopen) {
-            console.log('🚫 Preventing showTodoRecommendations modal reopen');
-            return;
-        }
-        
         // Analyze event and get relevant todos
         const relevantTodos = analyzeEventAndGetTodos(event);
         console.log('Relevant todos found:', relevantTodos);
@@ -1784,338 +1190,48 @@ function analyzeEventAndGetTodos(event) {
     const description = (event.description || '').toLowerCase();
     const fullText = `${title} ${description}`;
     
-    console.log('🧠 Intelligent Event Analysis:', { title, description });
+    console.log('Analyzing event:', { title, description, fullText });
+    console.log('Available todo categories:', Object.keys(todoRecommendations));
     
-    // PERSONALIZED RECOMMENDATIONS - Much more relevant!
-    
-    // Social Events
-    if (containsKeywords(fullText, ['친구', 'friends', '만나', 'meet', '모임', 'gathering', '약속', '놀', '만남'])) {
-        console.log('✅ Meeting with friends detected');
-        // Create custom friend meeting todos
-        return [
-            {
-                id: 'friends_custom_1',
-                title: '장소 정하기',
-                description: '분위기 좋고 대화하기 편한 카페나 레스토랑 찾기',
-                category: 'planning',
-                daysBefore: 3
-            },
-            {
-                id: 'friends_custom_2',
-                title: '예약하기',
-                description: '인원수에 맞춰 미리 예약하기',
-                category: 'coordination',
-                daysBefore: 2
-            },
-            {
-                id: 'friends_custom_3',
-                title: '친구들에게 연락',
-                description: '시간과 장소 확정해서 알려주기',
-                category: 'communication',
-                daysBefore: 1
-            },
-            {
-                id: 'friends_custom_4',
-                title: '교통편 확인',
-                description: '대중교통 시간이나 주차 가능 여부 확인',
-                category: 'logistical',
-                daysBefore: 1
-            }
-        ];
-    }
-    
-    // Study & Exams - Subject Specific
-    if (containsKeywords(fullText, ['시험', 'test', 'exam', '평가', '고사', 'quiz'])) {
-        console.log('✅ Exam detected');
-        
-        // Math exam
-        if (containsKeywords(fullText, ['수학', 'math', '산수', '대수', '기하', '미적분'])) {
-            return [
-                {
-                    id: 'math_custom_1',
-                    title: '공식 정리하기',
-                    description: '시험 범위의 중요 공식들 한 장에 정리',
-                    category: 'study',
-                    daysBefore: 5
-                },
-                {
-                    id: 'math_custom_2',
-                    title: '계산 실수 체크리스트',
-                    description: '자주 하는 실수들 정리해서 주의하기',
-                    category: 'review',
-                    daysBefore: 3
-                },
-                {
-                    id: 'math_custom_3',
-                    title: '응용문제 연습',
-                    description: '교과서와 문제집의 고난도 문제 풀기',
-                    category: 'practice',
-                    daysBefore: 2
-                },
-                {
-                    id: 'math_custom_4',
-                    title: '계산기 확인',
-                    description: '허용되면 계산기 배터리와 작동 확인',
-                    category: 'logistical',
-                    daysBefore: 1
-                }
-            ];
-        }
-        
-        // English exam
-        if (containsKeywords(fullText, ['영어', 'english', '영문', '토익', 'toeic'])) {
-            return [
-                {
-                    id: 'eng_custom_1',
-                    title: '단어장 만들기',
-                    description: '시험 범위 단어와 뜻 정리하기',
-                    category: 'study',
-                    daysBefore: 5
-                },
-                {
-                    id: 'eng_custom_2',
-                    title: '문법 정리',
-                    description: '헷갈리는 문법 포인트 예문과 함께 정리',
-                    category: 'study',
-                    daysBefore: 4
-                },
-                {
-                    id: 'eng_custom_3',
-                    title: '리스닝 연습',
-                    description: '교재 MP3로 듣기 연습하기',
-                    category: 'practice',
-                    daysBefore: 2
-                }
-            ];
-        }
-        
-        // Default exam todos
+    // Check for Korean school-related event types and return relevant todos
+    if (containsKeywords(fullText, ['시험', 'exam', '중간고사', '기말고사', '모의고사', '수능', '학력평가'])) {
+        console.log('✅ Matched EXAM category');
+        console.log('Exam todos:', todoRecommendations.exam);
         return todoRecommendations.exam;
     }
     
-    // Dating & Romance
-    if (containsKeywords(fullText, ['데이트', 'date', '여자친구', '남자친구', 'girlfriend', 'boyfriend'])) {
-        console.log('✅ Date event detected');
-        return [
-            {
-                id: 'date_custom_1',
-                title: '데이트 코스 계획',
-                description: '식사, 영화, 산책 등 하루 동선 짜기',
-                category: 'planning',
-                daysBefore: 3
-            },
-            {
-                id: 'date_custom_2',
-                title: '레스토랑 예약',
-                description: '분위기 좋은 곳으로 미리 예약하기',
-                category: 'coordination',
-                daysBefore: 2
-            },
-            {
-                id: 'date_custom_3',
-                title: '날씨 확인',
-                description: '야외 활동이 있다면 날씨 체크하기',
-                category: 'information',
-                daysBefore: 1
-            },
-            {
-                id: 'date_custom_4',
-                title: '옷 준비하기',
-                description: '깔끔하고 상황에 맞는 옷 준비',
-                category: 'preparation',
-                daysBefore: 1
-            }
-        ];
-    }
-    
-    // Sports & Exercise
-    if (containsKeywords(fullText, ['운동', 'sports', 'exercise', '축구', '농구', '야구', '테니스', '수영', '헬스', 'gym'])) {
-        console.log('✅ Sports event detected');
-        return [
-            {
-                id: 'sport_custom_1',
-                title: '운동복/장비 준비',
-                description: '운동화, 운동복, 필요한 장비 체크',
-                category: 'preparation',
-                daysBefore: 1
-            },
-            {
-                id: 'sport_custom_2',
-                title: '몸 컨디션 조절',
-                description: '무리한 운동 피하고 스트레칭하기',
-                category: 'health',
-                daysBefore: 1
-            },
-            {
-                id: 'sport_custom_3',
-                title: '음료/간식 준비',
-                description: '물, 스포츠음료, 에너지바 준비',
-                category: 'logistical',
-                daysBefore: 1
-            }
-        ];
-    }
-    
-    // Birthday & Parties
-    if (containsKeywords(fullText, ['생일', 'birthday', '파티', 'party', '축하'])) {
-        console.log('✅ Birthday/Party detected');
-        return [
-            {
-                id: 'party_custom_1',
-                title: '선물 준비하기',
-                description: '받는 사람이 좋아할 만한 선물 고르기',
-                category: 'preparation',
-                daysBefore: 3
-            },
-            {
-                id: 'party_custom_2',
-                title: '케이크 준비',
-                description: '생일 케이크나 특별한 디저트 준비',
-                category: 'coordination',
-                daysBefore: 2
-            },
-            {
-                id: 'party_custom_3',
-                title: '파티 준비물',
-                description: '파티에 필요한 것들 체크하기',
-                category: 'preparation',
-                daysBefore: 1
-            }
-        ];
-    }
-    
-    // Travel
-    if (containsKeywords(fullText, ['여행', 'travel', 'trip', '휴가', 'vacation', '출장'])) {
-        console.log('✅ Travel detected');
-        return [
-            {
-                id: 'travel_custom_1',
-                title: '숙소 예약',
-                description: '호텔이나 숙박시설 예약 확인',
-                category: 'coordination',
-                daysBefore: 7
-            },
-            {
-                id: 'travel_custom_2',
-                title: '교통편 예약',
-                description: '기차표, 버스표, 항공권 등 예약',
-                category: 'coordination',
-                daysBefore: 5
-            },
-            {
-                id: 'travel_custom_3',
-                title: '여행 일정 짜기',
-                description: '가고 싶은 곳과 동선 계획하기',
-                category: 'planning',
-                daysBefore: 3
-            },
-            {
-                id: 'travel_custom_4',
-                title: '짐 싸기',
-                description: '날씨에 맞는 옷과 필수품 챙기기',
-                category: 'preparation',
-                daysBefore: 1
-            }
-        ];
-    }
-    
-    // Job & Work
-    if (containsKeywords(fullText, ['면접', 'interview', '취업', 'job', '회사', '업무', 'work'])) {
-        console.log('✅ Job/Work event detected');
-        return [
-            {
-                id: 'job_custom_1',
-                title: '회사 조사하기',
-                description: '회사 정보와 업무 내용 파악',
-                category: 'research',
-                daysBefore: 3
-            },
-            {
-                id: 'job_custom_2',
-                title: '준비물 체크',
-                description: '필요한 서류와 준비물 확인',
-                category: 'preparation',
-                daysBefore: 1
-            },
-            {
-                id: 'job_custom_3',
-                title: '복장 준비',
-                description: '적절한 복장 준비하기',
-                category: 'preparation',
-                daysBefore: 1
-            }
-        ];
-    }
-    
-    // Hospital & Medical
-    if (containsKeywords(fullText, ['병원', 'hospital', '의사', 'doctor', '진료', '검사', '치과'])) {
-        console.log('✅ Medical appointment detected');
-        return [
-            {
-                id: 'hosp_custom_1',
-                title: '진료 예약 확인',
-                description: '예약 시간과 진료과 확인하기',
-                category: 'information',
-                daysBefore: 1
-            },
-            {
-                id: 'hosp_custom_2',
-                title: '보험증/신분증',
-                description: '건강보험증과 신분증 준비',
-                category: 'logistical',
-                daysBefore: 1
-            },
-            {
-                id: 'hosp_custom_3',
-                title: '증상 정리하기',
-                description: '의사에게 설명할 증상들 메모',
-                category: 'preparation',
-                daysBefore: 1
-            }
-        ];
-    }
-    
-    // School projects and assignments (non-exam)
-    if (containsKeywords(fullText, ['프로젝트', 'project', '과제', 'assignment', '발표', 'presentation'])) {
-        console.log('✅ Project/Assignment detected');
+    if (containsKeywords(fullText, ['프로젝트', 'project', '과제', 'assignment', '발표', 'presentation', '연구'])) {
+        console.log('✅ Matched PROJECT category');
         return todoRecommendations.project;
     }
     
-    // School events
-    if (containsKeywords(fullText, ['학교', 'school', '수업', 'class'])) {
-        if (containsKeywords(fullText, ['행사', 'event', '축제', 'festival'])) {
-            return todoRecommendations.school_event;
-        }
-        if (containsKeywords(fullText, ['수학여행', 'field trip', '견학'])) {
-            return todoRecommendations.field_trip;
-        }
+    if (containsKeywords(fullText, ['학교행사', 'school event', '체육대회', '예술제', '수학여행', '졸업식', '입학식'])) {
+        console.log('✅ Matched SCHOOL_EVENT category');
+        return todoRecommendations.school_event;
     }
     
-    // Default - but more relevant
-    console.log('📌 Using improved default todos');
-    return [
-        {
-            id: 'default_custom_1',
-            title: '일정 상세 확인',
-            description: '정확한 시간, 장소, 참석자 확인하기',
-            category: 'coordination',
-            daysBefore: 2
-        },
-        {
-            id: 'default_custom_2',
-            title: '준비물 체크',
-            description: '필요한 물건들 미리 준비하기',
-            category: 'preparation',
-            daysBefore: 1
-        },
-        {
-            id: 'default_custom_3',
-            title: '이동 계획',
-            description: '교통수단과 소요시간 확인하기',
-            category: 'logistical',
-            daysBefore: 1
-        }
-    ];
+    if (containsKeywords(fullText, ['동아리', 'club', '방과후', 'after school', '특별활동', '동호회'])) {
+        console.log('✅ Matched CLUB category');
+        return todoRecommendations.club;
+    }
+    
+    if (containsKeywords(fullText, ['숙제', 'homework', '과제', 'assignment', '레포트', 'report'])) {
+        console.log('✅ Matched HOMEWORK category');
+        return todoRecommendations.homework;
+    }
+    
+    if (containsKeywords(fullText, ['수학여행', 'field trip', '견학', '체험학습', '현장학습'])) {
+        console.log('✅ Matched FIELD_TRIP category');
+        return todoRecommendations.field_trip;
+    }
+    
+    if (containsKeywords(fullText, ['스터디', 'study group', '그룹스터디', 'peer study', '같이공부'])) {
+        console.log('✅ Matched STUDY_GROUP category');
+        return todoRecommendations.study_group;
+    }
+    
+    console.log('❌ No category matched, returning DEFAULT');
+    return todoRecommendations.default;
 }
 
 // Helper function to check if text contains any of the keywords
@@ -2229,42 +1345,19 @@ function addTodo(recommendationId, eventId) {
 
 // Remove todo from user's list
 function removeTodo(recommendationId, eventId) {
-    // Check the current modal state BEFORE making changes
-    const todoModal = document.getElementById('todoModal');
-    const modalTitle = todoModal?.querySelector('.modal-header h3');
-    const isInTodoListModal = modalTitle && modalTitle.textContent === '내 할일 목록';
-    const isInTodoDetailModal = modalTitle && modalTitle.textContent === '할일 상세';
-    
     todos = todos.filter(todo => !(todo.recommendationId === recommendationId && todo.eventId === eventId));
     saveTodos();
     
     // Update calendar to show todo indicators
     renderCalendar();
+
+    // Update the event list/todo panel at the bottom
+    updateEventList();
     
-    if (isInTodoListModal && todoModal.classList.contains('active')) {
-        // If in todo list modal, refresh the list without closing modal
-        showAllTodos();
-    } else if (isInTodoDetailModal && todoModal.classList.contains('active')) {
-        // If in todo detail modal, close all modals and return to calendar view
-        console.log('🗑️ Trash clicked in todo detail modal - closing all modals and returning to calendar');
-        preventTodoModalReopen = true; // Prevent modal from reopening
-        closeTodoModal();
-        closeModal(); // Also close any event modal that might be open
-        showCalendarView(); // Ensure we're back to calendar view
-        // Update the event list AFTER closing modals to prevent reopening
-        updateEventList();
-        // Clear the flag after a longer delay to ensure all async operations complete
-        setTimeout(() => {
-            preventTodoModalReopen = false;
-            console.log('✅ Todo modal reopen prevention cleared');
-        }, 500);
-    } else {
-        // If in other contexts, close the modal and update event list
-        if (todoModal && todoModal.classList.contains('active')) {
-            todoModal.classList.remove('active');
-        }
-        // Update the event list/todo panel at the bottom
-        updateEventList();
+    // Close the todo detail modal if it's open
+    const todoModal = document.getElementById('todoModal');
+    if (todoModal && todoModal.classList.contains('active')) {
+        todoModal.classList.remove('active');
     }
 }
 
@@ -2287,28 +1380,20 @@ function formatDateForDisplay(date) {
 
 // Show all user's todos
 function showAllTodos() {
+    if (todos.length === 0) {
+        showSuccessMessage('추가된 할일이 없습니다');
+        return;
+    }
+    
+    // Sort todos by due date
+    const sortedTodos = [...todos].sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+    
     const modal = document.getElementById('todoModal');
     const recommendationsContainer = document.getElementById('todoRecommendations');
     
     // Change modal title
     const modalTitle = modal.querySelector('.modal-header h3');
     modalTitle.textContent = '내 할일 목록';
-    
-    if (todos.length === 0) {
-        // Show empty modal instead of system message
-        recommendationsContainer.innerHTML = `
-            <div style="text-align: center; padding: 40px 20px; color: #666;">
-                <i class="fas fa-clipboard-list" style="font-size: 3rem; color: #ddd; margin-bottom: 16px;"></i>
-                <h3 style="margin-bottom: 8px; color: #999;">할일이 없습니다</h3>
-                <p style="font-size: 0.9rem;">캘린더에서 이벤트를 만들고 할일을 추가해보세요!</p>
-            </div>
-        `;
-        modal.classList.add('active');
-        return;
-    }
-    
-    // Sort todos by due date
-    const sortedTodos = [...todos].sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
     
     // Render all todos
     recommendationsContainer.innerHTML = sortedTodos.map(todo => {
@@ -2344,12 +1429,6 @@ function showAllTodos() {
 
 // Show todo detail
 function showTodoDetail(todo) {
-    // Check if modal reopening is currently prevented
-    if (preventTodoModalReopen) {
-        console.log('🚫 Preventing todo modal reopen after delete');
-        return;
-    }
-    
     const event = events.find(e => e.id === todo.eventId);
     const eventTitle = event ? event.title : '알 수 없는 이벤트';
     
@@ -2387,13 +1466,7 @@ function showTodoDetail(todo) {
         </div>
     `;
     
-    console.log('🔍 About to show todo detail modal, prevention flag:', preventTodoModalReopen);
-    if (!preventTodoModalReopen) {
-        modal.classList.add('active');
-        console.log('✅ Todo detail modal shown');
-    } else {
-        console.log('🚫 Todo detail modal blocked by prevention flag');
-    }
+    modal.classList.add('active');
 }
 
 // Get category name in Korean

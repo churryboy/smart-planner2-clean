@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -8,17 +9,39 @@ const PORT = process.env.PORT || 8080; // Use 8080 for local development
 
 // CORS configuration for production and development
 const corsOptions = {
-    origin: [
-        'https://smart-planner2.vercel.app',
-        'https://smart-planner2-churryboys-projects.vercel.app',
-        "https://smart-planner2-clean.vercel.app",
-        'http://localhost:3000',
-        'http://localhost:8080',
-        'http://127.0.0.1:8080',
-        'null' // Allow file:// protocol for local testing
-    ],
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) {
+            return callback(null, true);
+        }
+        
+        // Define allowed origins
+        const allowedOrigins = [
+            /^https:\/\/smart-planner2.*\.vercel\.app$/,  // Any Vercel deployment
+            /^http:\/\/localhost:\d+$/,                   // Any localhost port
+            /^http:\/\/127\.0\.0\.1:\d+$/,               // Any 127.0.0.1 port
+            /^file:\/\/.*$/                              // File protocol
+        ];
+        
+        // Check if origin matches any allowed pattern
+        const isAllowed = allowedOrigins.some(pattern => {
+            if (pattern instanceof RegExp) {
+                return pattern.test(origin);
+            }
+            return pattern === origin;
+        });
+        
+        if (isAllowed || origin === 'null') {
+            callback(null, true);
+        } else {
+            console.log('CORS blocked origin:', origin);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,
-    optionsSuccessStatus: 200
+    optionsSuccessStatus: 200,
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 };
 
 // Middleware
@@ -60,12 +83,28 @@ const SYSTEM_PROMPT = `당신은 사용자가 자연어로 일정을 입력할 �
 }
 
 시간이 명시되지 않은 경우 allDay를 true로 설정하고 time을 null로 설정하세요.
-오늘 날짜는 ${new Date().toISOString().split('T')[0]}입니다.
+오늘 날짜는 ${(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+})()}입니다.
+현재 한국 시간은 ${new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}입니다.
+현재 년도는 ${new Date().getFullYear()}년이므로 모든 날짜는 이 년도 기준으로 계산하세요.
 
 예시:
 - "내일 오후 2시에 회의" → 내일 날짜, 14:00
+- "9월 10일에 수학시험" → 2024-09-10, allDay: true
 - "다음주 월요일에 출장" → 다음주 월요일 날짜, allDay: true
 - "금요일 저녁 7시 저녁약속" → 이번주 금요일, 19:00
+
+중요한 날짜 계산 규칙:
+- "9월 1일" = 2025-09-01 (현재 년도 기준)
+- "내일" = 오늘 날짜 + 1일 (정확히 2025-09-01)
+- "모레" = 오늘 날짜 + 2일
+- 월/일 형식은 현재 년도(2025) 기준으로 변환
+- 과거 월은 다음 년도로 계산하지 말고 현재 년도 우선
 
 중요: 반드시 유효한 JSON 형식으로만 응답하세요.`;
 

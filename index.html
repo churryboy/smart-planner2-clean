@@ -16,13 +16,13 @@
                 <span class="logo-text">스마트 캘린더</span>
             </div>
             <div class="header-actions">
-                <button class="icon-btn" id="todayBtn">
-                    <i class="fas fa-calendar-day"></i>
+                <button class="icon-btn" id="calendarViewBtn" title="캘린더 보기">
+                    <i class="fas fa-calendar"></i>
                 </button>
-                <button class="icon-btn" id="todosBtn" title="할일 목록">
-                    <i class="fas fa-tasks"></i>
+                <button class="icon-btn" id="todoListViewBtn" title="할일 목록 보기">
+                    <i class="fas fa-list"></i>
                 </button>
-                <button class="icon-btn" id="settingsBtn">
+                <button class="icon-btn" id="settingsBtn" title="설정">
                     <i class="fas fa-cog"></i>
                 </button>
             </div>
@@ -32,7 +32,7 @@
     <!-- Main Content -->
     <main class="main-content">
         <!-- Calendar View -->
-        <div class="calendar-container">
+        <div class="calendar-container" id="calendarView">
             <!-- Month Navigation -->
             <div class="month-nav">
                 <button class="nav-arrow" id="prevMonth">
@@ -79,12 +79,31 @@
                 <!-- Events and todos will be dynamically generated -->
             </div>
         </div>
+        
+        <!-- Todo List View -->
+        <div class="todo-list-container" id="todoListView" style="display: none;">
+            <div class="todo-list-header">
+                <h2>할일 목록</h2>
+                <p>날짜순으로 정렬된 모든 할일</p>
+            </div>
+            <div class="todo-list-content" id="todoListContent">
+                <!-- Todo items will be dynamically generated -->
+            </div>
+        </div>
     </main>
+
+    <!-- Version Info -->
+    <div class="version-info">
+        v1.0.0 | commit: ab33522
+    </div>
 
     <!-- AI Input Section -->
     <div class="ai-input-section">
         <div class="ai-input-container">
             <div class="ai-input-wrapper">
+                <button class="camera-btn" id="cameraBtn" title="사진으로 일정 추가">
+                    <i class="fas fa-camera"></i>
+                </button>
                 <textarea 
                     class="ai-input" 
                     id="aiInput" 
@@ -95,6 +114,9 @@
                     <i class="fas fa-paper-plane"></i>
                 </button>
             </div>
+            
+            <!-- Hidden file input for camera -->
+            <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;">
             <div class="ai-hint">
                 <i class="fas fa-info-circle"></i>
                 <span>AI가 일정을 자동으로 파악하여 캘린더에 추가합니다</span>
@@ -143,6 +165,6 @@
     </div>
 
     <script src="config.js"></script>
-    <script src="script.js"></script>
+    <script src="script.js?v=20241220-2"></script>
 </body>
 </html> 
