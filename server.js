@@ -159,40 +159,99 @@ async function makeClaudeRequest(requestData) {
     return claudeResponse;
 }
 
-// Parse Korean schedule text into JSON format
+// Parse Korean schedule text into JSON format (Enhanced)
 function parseKoreanScheduleText(text) {
     console.log('🔧 Attempting to parse Korean schedule text:', text);
     
-    // Look for date patterns like "9월 10일", "9월 23일", etc.
-    const datePattern = /(\d{1,2})월\s*(\d{1,2})일[:\s]*([^\n•]+)/g;
-    const matches = [...text.matchAll(datePattern)];
+    const events = [];
+    const currentYear = new Date().getFullYear();
     
-    console.log('🔍 Found', matches.length, 'schedule items in image');
+    // Pattern 1: "9월 10일", "10월 23일" format
+    const monthDayPattern = /(\d{1,2})월\s*(\d{1,2})일[:\s]*([^\n•~\-]+)/g;
+    const monthDayMatches = [...text.matchAll(monthDayPattern)];
     
-    if (matches.length > 0) {
-        // Create multiple events
-        const events = matches.map((match, index) => {
-            const [, month, day, title] = match;
-            const currentYear = new Date().getFullYear();
-            
-            // Format date as YYYY-MM-DD (ensure local timezone)
-            const date = `${currentYear}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-            
-            return {
-                title: title.trim(),
-                date: date,
-                time: null,
-                description: `이미지에서 추출된 일정: ${title.trim()}`,
-                allDay: true
-            };
+    // Pattern 2: "10.27", "12.8" format (month.day)
+    const dotPattern = /(\d{1,2})\.(\d{1,2})[:\s]*([^\n•~\-]+)/g;
+    const dotMatches = [...text.matchAll(dotPattern)];
+    
+    // Pattern 3: Date ranges like "10.27~10.29", "12.8~12.10"
+    const rangePattern = /(\d{1,2})\.(\d{1,2})\s*[~\-]\s*(\d{1,2})\.(\d{1,2})[:\s]*([^\n•]+)/g;
+    const rangeMatches = [...text.matchAll(rangePattern)];
+    
+    console.log('🔍 Pattern matches found:');
+    console.log('- Month-Day format:', monthDayMatches.length);
+    console.log('- Dot format:', dotMatches.length);
+    console.log('- Range format:', rangeMatches.length);
+    
+    // Process month-day patterns (9월 10일)
+    monthDayMatches.forEach(match => {
+        const [, month, day, title] = match;
+        const date = `${currentYear}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        
+        events.push({
+            title: title.trim(),
+            date: date,
+            time: null,
+            description: `이미지에서 추출된 일정: ${title.trim()}`,
+            allDay: true
         });
+    });
+    
+    // Process dot patterns (10.27)
+    dotMatches.forEach(match => {
+        const [, month, day, title] = match;
+        const date = `${currentYear}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
         
-        console.log('📅 Created events:', events);
+        events.push({
+            title: title.trim(),
+            date: date,
+            time: null,
+            description: `이미지에서 추출된 일정: ${title.trim()}`,
+            allDay: true
+        });
+    });
+    
+    // Process range patterns (10.27~10.29)
+    rangeMatches.forEach(match => {
+        const [, startMonth, startDay, endMonth, endDay, title] = match;
         
+        // Create events for each day in the range
+        const startDate = new Date(currentYear, parseInt(startMonth) - 1, parseInt(startDay));
+        const endDate = new Date(currentYear, parseInt(endMonth) - 1, parseInt(endDay));
+        
+        const currentDate = new Date(startDate);
+        while (currentDate <= endDate) {
+            const month = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+            const day = currentDate.getDate().toString().padStart(2, '0');
+            const dateStr = `${currentYear}-${month}-${day}`;
+            
+            events.push({
+                title: title.trim(),
+                date: dateStr,
+                time: null,
+                description: `이미지에서 추출된 일정 (${startMonth}.${startDay}~${endMonth}.${endDay}): ${title.trim()}`,
+                allDay: true
+            });
+            
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+    });
+    
+    // Remove duplicates based on date and title
+    const uniqueEvents = events.filter((event, index, self) => 
+        index === self.findIndex(e => e.date === event.date && e.title === event.title)
+    );
+    
+    console.log('📅 Total unique events created:', uniqueEvents.length);
+    uniqueEvents.forEach((event, i) => {
+        console.log(`  ${i + 1}. ${event.title} - ${event.date}`);
+    });
+    
+    if (uniqueEvents.length > 0) {
         return {
             success: true,
-            events: events, // Return multiple events
-            message: `이미지에서 ${events.length}개의 일정이 추가되었습니다`
+            events: uniqueEvents,
+            message: `이미지에서 ${uniqueEvents.length}개의 일정이 추가되었습니다`
         };
     }
     

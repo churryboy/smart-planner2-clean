@@ -2089,32 +2089,86 @@ function showErrorMessage(message) {
     }, 3000);
 }
 
-// Parse Korean schedule text on client side
+// Parse Korean schedule text on client side (Enhanced)
 function parseKoreanScheduleTextClient(text) {
     console.log('🔧 Client-side parsing Korean text:', text);
     
-    const datePattern = /(\d{1,2})월\s*(\d{1,2})일[:\s]*([^\n•]+)/g;
-    const matches = [...text.matchAll(datePattern)];
+    const events = [];
+    const currentYear = new Date().getFullYear();
     
-    console.log('🔍 Client found', matches.length, 'schedule items');
+    // Pattern 1: "9월 10일", "10월 23일" format
+    const monthDayPattern = /(\d{1,2})월\s*(\d{1,2})일[:\s]*([^\n•~\-]+)/g;
+    const monthDayMatches = [...text.matchAll(monthDayPattern)];
     
-    if (matches.length > 0) {
-        return matches.map((match, index) => {
-            const [, month, day, title] = match;
-            const currentYear = new Date().getFullYear();
-            const date = `${currentYear}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-            
-            return {
-                title: title.trim(),
-                date: date,
-                time: null,
-                description: `이미지에서 추출된 일정: ${title.trim()}`,
-                allDay: true
-            };
+    // Pattern 2: "10.27", "12.8" format (month.day)
+    const dotPattern = /(\d{1,2})\.(\d{1,2})[:\s]*([^\n•~\-]+)/g;
+    const dotMatches = [...text.matchAll(dotPattern)];
+    
+    // Pattern 3: Date ranges like "10.27~10.29", "12.8~12.10"
+    const rangePattern = /(\d{1,2})\.(\d{1,2})\s*[~\-]\s*(\d{1,2})\.(\d{1,2})[:\s]*([^\n•]+)/g;
+    const rangeMatches = [...text.matchAll(rangePattern)];
+    
+    console.log('🔍 Client pattern matches found:');
+    console.log('- Month-Day format:', monthDayMatches.length);
+    console.log('- Dot format:', dotMatches.length);
+    console.log('- Range format:', rangeMatches.length);
+    
+    // Process all patterns the same way as server
+    monthDayMatches.forEach(match => {
+        const [, month, day, title] = match;
+        const date = `${currentYear}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        events.push({
+            title: title.trim(),
+            date: date,
+            time: null,
+            description: `이미지에서 추출된 일정: ${title.trim()}`,
+            allDay: true
         });
-    }
+    });
     
-    return [];
+    dotMatches.forEach(match => {
+        const [, month, day, title] = match;
+        const date = `${currentYear}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        events.push({
+            title: title.trim(),
+            date: date,
+            time: null,
+            description: `이미지에서 추출된 일정: ${title.trim()}`,
+            allDay: true
+        });
+    });
+    
+    rangeMatches.forEach(match => {
+        const [, startMonth, startDay, endMonth, endDay, title] = match;
+        const startDate = new Date(currentYear, parseInt(startMonth) - 1, parseInt(startDay));
+        const endDate = new Date(currentYear, parseInt(endMonth) - 1, parseInt(endDay));
+        
+        const currentDate = new Date(startDate);
+        while (currentDate <= endDate) {
+            const month = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+            const day = currentDate.getDate().toString().padStart(2, '0');
+            const dateStr = `${currentYear}-${month}-${day}`;
+            
+            events.push({
+                title: title.trim(),
+                date: dateStr,
+                time: null,
+                description: `이미지에서 추출된 일정 (${startMonth}.${startDay}~${endMonth}.${endDay}): ${title.trim()}`,
+                allDay: true
+            });
+            
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+    });
+    
+    // Remove duplicates
+    const uniqueEvents = events.filter((event, index, self) => 
+        index === self.findIndex(e => e.date === event.date && e.title === event.title)
+    );
+    
+    console.log('📅 Client created', uniqueEvents.length, 'unique events');
+    
+    return uniqueEvents;
 }
 
 // Generate unique ID
