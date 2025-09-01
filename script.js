@@ -1761,16 +1761,27 @@ async function handleImageUpload(event) {
     if (!file) return;
     
     console.log('📷 Image file selected:', file.name);
+    console.log('📱 Mobile camera debug:');
+    console.log('- File size:', file.size, 'bytes');
+    console.log('- File type:', file.type);
+    console.log('- File last modified:', new Date(file.lastModified));
+    console.log('- User agent:', navigator.userAgent.includes('Mobile') ? 'Mobile' : 'Desktop');
     
     // Show loading indicator
     showLoading();
     
-    try {
-        // Convert image to base64
-        const imageData = await convertImageToBase64(file);
-        console.log('🔄 Image converted to base64, type:', imageData.mediaType);
-        
-        // Send image to Claude for OCR and schedule extraction
+            try {
+            // Process and potentially resize image for mobile compatibility
+            const processedFile = await processImageForMobile(file);
+            console.log('🔄 Image processed for mobile compatibility');
+            
+            // Convert image to base64
+            const imageData = await convertImageToBase64(processedFile);
+            console.log('🔄 Image converted to base64, type:', imageData.mediaType);
+            console.log('📊 Base64 data length:', imageData.base64.length);
+            console.log('📊 Estimated image size:', Math.round(imageData.base64.length * 0.75), 'bytes (decoded)');
+            
+            // Send image to Claude for OCR and schedule extraction
         const ocrMessage = `이 이미지를 분석하여 일정이나 캘린더 정보를 추출해주세요. 날짜, 시간, 이벤트, 약속 등의 일정 정보를 찾아서 JSON 형식으로 응답해주세요. 여러 일정이 있으면 가장 중요한 하나를 선택해서 응답해주세요.`;
         
         const response = await callClaudeAPIWithImage(ocrMessage, imageData.base64, imageData.mediaType);
@@ -1886,6 +1897,107 @@ async function handleImageUpload(event) {
     }
 }
 
+// Process image for mobile compatibility
+async function processImageForMobile(file) {
+    console.log('🔧 Processing image for mobile compatibility...');
+    
+    // Check if image is too large (mobile cameras often produce huge images)
+    const MAX_SIZE = 2 * 1024 * 1024; // 2MB limit
+    const MAX_DIMENSION = 1568; // Claude's recommended max dimension
+    
+    if (file.size > MAX_SIZE) {
+        console.log('⚠️ Image too large, resizing...', file.size, 'bytes');
+        return await resizeImage(file, MAX_DIMENSION);
+    }
+    
+    // Check image dimensions
+    const dimensions = await getImageDimensions(file);
+    console.log('📐 Image dimensions:', dimensions.width, 'x', dimensions.height);
+    
+    if (dimensions.width > MAX_DIMENSION || dimensions.height > MAX_DIMENSION) {
+        console.log('⚠️ Image dimensions too large, resizing...');
+        return await resizeImage(file, MAX_DIMENSION);
+    }
+    
+    console.log('✅ Image size acceptable, no processing needed');
+    return file;
+}
+
+// Get image dimensions
+function getImageDimensions(file) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        
+        img.onload = () => {
+            URL.revokeObjectURL(url);
+            resolve({ width: img.width, height: img.height });
+        };
+        
+        img.onerror = () => {
+            URL.revokeObjectURL(url);
+            reject(new Error('Failed to load image'));
+        };
+        
+        img.src = url;
+    });
+}
+
+// Resize image if too large
+function resizeImage(file, maxDimension) {
+    return new Promise((resolve, reject) => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        
+        img.onload = () => {
+            URL.revokeObjectURL(url);
+            
+            // Calculate new dimensions
+            let { width, height } = img;
+            if (width > height) {
+                if (width > maxDimension) {
+                    height = (height * maxDimension) / width;
+                    width = maxDimension;
+                }
+            } else {
+                if (height > maxDimension) {
+                    width = (width * maxDimension) / height;
+                    height = maxDimension;
+                }
+            }
+            
+            // Resize image
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Convert back to file
+            canvas.toBlob((blob) => {
+                if (blob) {
+                    // Create new file with same name and type
+                    const resizedFile = new File([blob], file.name, {
+                        type: file.type || 'image/jpeg',
+                        lastModified: Date.now()
+                    });
+                    console.log('✅ Image resized:', file.size, '→', resizedFile.size, 'bytes');
+                    resolve(resizedFile);
+                } else {
+                    reject(new Error('Failed to resize image'));
+                }
+            }, file.type || 'image/jpeg', 0.9); // 90% quality
+        };
+        
+        img.onerror = () => {
+            URL.revokeObjectURL(url);
+            reject(new Error('Failed to load image for resizing'));
+        };
+        
+        img.src = url;
+    });
+}
+
 // Convert image file to base64
 function convertImageToBase64(file) {
     return new Promise((resolve, reject) => {
@@ -1897,7 +2009,13 @@ function convertImageToBase64(file) {
             
             // Extract media type from data URL header or use file.type
             const mediaTypeMatch = header.match(/data:([^;]+)/);
-            const mediaType = mediaTypeMatch ? mediaTypeMatch[1] : file.type || 'image/png';
+            let mediaType = mediaTypeMatch ? mediaTypeMatch[1] : file.type || 'image/png';
+            
+            // Handle HEIC images (common on iOS) - convert to JPEG for Claude
+            if (mediaType === 'image/heic' || mediaType === 'image/heif') {
+                console.log('📱 HEIC image detected, converting to JPEG for compatibility');
+                mediaType = 'image/jpeg';
+            }
             
             console.log('🔍 File type:', file.type, 'Detected media type:', mediaType);
             
@@ -2534,9 +2652,27 @@ function addTodo(recommendationId, eventId) {
         }
     }
     
+    // If not found in static recommendations, check dynamic custom todos
+    if (!recommendation) {
+        const event = events.find(e => e.id === eventId);
+        if (event) {
+            const customTodos = analyzeEventAndGetTodos(event);
+            recommendation = customTodos.find(r => r.id === recommendationId);
+            console.log('🔍 Searched in custom todos, found:', !!recommendation, recommendation?.title);
+        }
+    }
+    
     const event = events.find(e => e.id === eventId);
     
-    if (!recommendation || !event) return;
+    console.log('🔍 addTodo debug:');
+    console.log('- Recommendation found:', !!recommendation, recommendation?.title);
+    console.log('- Event found:', !!event, event?.title);
+    
+    if (!recommendation || !event) {
+        console.log('❌ addTodo failed: Missing recommendation or event');
+        console.log('- Available todo categories:', Object.keys(todoRecommendations));
+        return;
+    }
     
     const eventDate = new Date(event.date);
     const todoDate = new Date(eventDate);
