@@ -51,11 +51,7 @@ body {
 .logo-text {
     font-size: 1.5rem;
     font-weight: 800;
-    background: linear-gradient(135deg, #FF5500, #FF8A00, #FFA500);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    text-shadow: 0 2px 4px rgba(255, 85, 0, 0.3);
+    color: #333;
     letter-spacing: -0.5px;
 }
 
