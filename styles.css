@@ -537,6 +537,15 @@ body {
     align-items: center;
     justify-content: center;
     padding: 20px;
+    overscroll-behavior: contain;
+}
+
+/* Prevent body scroll when modal is active */
+body.modal-open {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
 }
 
 .modal.active {
@@ -916,15 +925,17 @@ body {
 
 /* Image Crop Modal Styles */
 .crop-modal {
-    max-width: 90vw;
-    max-height: 90vh;
+    max-width: 95vw;
+    max-height: 95vh;
+    width: 95vw;
+    height: 95vh;
 }
 
 .crop-container {
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    max-height: 70vh;
+    gap: 12px;
+    height: 100%;
 }
 
 .crop-canvas-container {
@@ -932,11 +943,12 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background: #f0f0f0;
+    background: #000;
     border-radius: 8px;
     overflow: hidden;
-    min-height: 300px;
-    max-height: 50vh;
+    flex: 1;
+    min-height: 400px;
+    max-height: 80vh;
 }
 
 #cropCanvas {
@@ -1077,27 +1089,51 @@ body {
 /* Mobile responsive crop modal */
 @media (max-width: 480px) {
     .crop-modal {
-        max-width: 95vw;
-        max-height: 95vh;
+        max-width: 100vw;
+        max-height: 100vh;
+        width: 100vw;
+        height: 100vh;
+        border-radius: 0;
+    }
+    
+    .modal-content.crop-modal {
+        border-radius: 0;
+        max-height: 100vh;
+        height: 100vh;
     }
     
     .crop-canvas-container {
-        min-height: 250px;
-        max-height: 40vh;
+        min-height: 60vh;
+        max-height: 75vh;
+        border-radius: 0;
     }
     
     .crop-controls {
         flex-direction: column;
-        gap: 12px;
+        gap: 8px;
         align-items: stretch;
+        padding: 12px;
     }
     
     .crop-buttons {
         justify-content: center;
+        gap: 12px;
     }
     
     .crop-btn {
         flex: 1;
         justify-content: center;
+        padding: 12px 16px;
+        font-size: 0.9rem;
+    }
+    
+    .crop-handle {
+        width: 16px;
+        height: 16px;
+        border: 3px solid white;
+    }
+    
+    .crop-box {
+        border-width: 3px;
     }
 } 

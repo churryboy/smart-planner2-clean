@@ -3503,31 +3503,40 @@ function showImageCropModal(imageFile) {
     };
     reader.readAsDataURL(imageFile);
     
-    // Show modal
+    // Show modal and prevent background scrolling
     modal.classList.add('active');
+    document.body.classList.add('modal-open');
 }
 
 // Setup canvas with image
 function setupCropCanvas(img) {
     const container = document.querySelector('.crop-canvas-container');
-    const containerWidth = container.clientWidth - 32; // Account for padding
-    const containerHeight = container.clientHeight - 32;
+    const containerWidth = container.clientWidth - 16; // Smaller padding
+    const containerHeight = container.clientHeight - 16;
     
-    // Calculate scale to fit image in container
+    // Calculate scale to fit image in container, allowing upscale for better visibility
     const scaleX = containerWidth / img.width;
     const scaleY = containerHeight / img.height;
-    imageScale = Math.min(scaleX, scaleY, 1); // Don't upscale
+    imageScale = Math.min(scaleX, scaleY, 2); // Allow upscale up to 2x for better resolution
     
     const displayWidth = img.width * imageScale;
     const displayHeight = img.height * imageScale;
     
-    // Set canvas size
-    canvas.width = displayWidth;
-    canvas.height = displayHeight;
+    // Set canvas size with device pixel ratio for high-DPI displays
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    canvas.width = displayWidth * devicePixelRatio;
+    canvas.height = displayHeight * devicePixelRatio;
     canvas.style.width = displayWidth + 'px';
     canvas.style.height = displayHeight + 'px';
     
-    // Draw image
+    // Scale context for high-DPI
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+    
+    // Enable image smoothing for better quality
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    
+    // Draw image with high quality
     ctx.drawImage(img, 0, 0, displayWidth, displayHeight);
     
     // Store image offset for calculations
@@ -3536,7 +3545,14 @@ function setupCropCanvas(img) {
         y: (containerHeight - displayHeight) / 2
     };
     
-    console.log('🖼️ Image setup:', { displayWidth, displayHeight, imageScale });
+    console.log('🖼️ High-res image setup:', { 
+        displayWidth, 
+        displayHeight, 
+        imageScale, 
+        devicePixelRatio,
+        canvasWidth: canvas.width,
+        canvasHeight: canvas.height
+    });
 }
 
 // Initialize crop box in center
@@ -3650,6 +3666,7 @@ async function confirmCrop() {
 function hideImageCropModal() {
     const modal = document.getElementById('imageCropModal');
     modal.classList.remove('active');
+    document.body.classList.remove('modal-open');
     currentImage = null;
     cropBox = { x: 0, y: 0, width: 0, height: 0 };
 }
