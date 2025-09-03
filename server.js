@@ -378,7 +378,8 @@ app.post('/api/claude-vision', async (req, res) => {
             // Parse the JSON response from Claude
             const parsedResponse = JSON.parse(responseContent);
             
-            if (parsedResponse.success && parsedResponse.event) {
+            if (parsedResponse.success && (parsedResponse.event || parsedResponse.events)) {
+                console.log('✅ Valid JSON response from Claude:', parsedResponse.events ? 'Multiple events' : 'Single event');
                 res.json(parsedResponse);
             } else {
                 throw new Error('Invalid response format from Claude Vision');
