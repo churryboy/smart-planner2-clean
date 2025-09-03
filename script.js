@@ -3560,16 +3560,20 @@ function initializeCropBox() {
     const overlay = document.getElementById('cropOverlay');
     const cropBoxElement = document.getElementById('cropBox');
     
-    // Set initial crop box to center 40% of image (smaller to stay within bounds)
-    const boxWidth = Math.min(canvas.width * 0.4, canvas.width - 40);
-    const boxHeight = Math.min(canvas.height * 0.4, canvas.height - 40);
+    // Set initial crop box to center 30% of image (much smaller, centered)
+    const margin = Math.min(canvas.width, canvas.height) * 0.15; // 15% margin on all sides
+    const maxWidth = canvas.width - (margin * 2);
+    const maxHeight = canvas.height - (margin * 2);
+    
+    const boxWidth = Math.min(maxWidth * 0.6, maxWidth); // 60% of available space
+    const boxHeight = Math.min(maxHeight * 0.6, maxHeight);
     const boxX = (canvas.width - boxWidth) / 2;
     const boxY = (canvas.height - boxHeight) / 2;
     
-    // Ensure crop box stays within canvas bounds
+    // Ensure crop box is properly centered with margins
     cropBox = { 
-        x: Math.max(20, Math.min(boxX, canvas.width - boxWidth - 20)), 
-        y: Math.max(20, Math.min(boxY, canvas.height - boxHeight - 20)), 
+        x: boxX, 
+        y: boxY, 
         width: boxWidth, 
         height: boxHeight 
     };
@@ -3577,7 +3581,9 @@ function initializeCropBox() {
     updateCropBoxDisplay();
     updateCropDimensions();
     
-    console.log('📦 Crop box initialized within bounds:', cropBox);
+    console.log('📦 Crop box initialized centered with margins:', cropBox);
+    console.log('📦 Canvas size:', { width: canvas.width, height: canvas.height });
+    console.log('📦 Margin applied:', margin);
 }
 
 // Update crop box visual display
