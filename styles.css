@@ -716,6 +716,24 @@ body {
 .loading-spinner p {
     font-size: 0.95rem;
     color: #666;
+    margin-bottom: 16px;
+}
+
+.loading-progress {
+    width: 200px;
+    height: 4px;
+    background: rgba(255, 85, 0, 0.2);
+    border-radius: 2px;
+    overflow: hidden;
+    margin: 0 auto;
+}
+
+.progress-bar {
+    height: 100%;
+    background: #FF5500;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+    width: 0%;
 }
 
 /* Responsive Design */
@@ -751,100 +769,133 @@ body {
 
 /* Schedule Confirmation Modal Styles */
 .schedule-confirm-modal {
-    max-width: 320px;
+    max-width: 450px;
 }
 
 .schedule-confirm-content {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 16px;
+}
+
+.schedule-items {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.schedule-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    background: rgba(255, 85, 0, 0.05);
+    border-radius: 12px;
+    border: 2px solid rgba(255, 85, 0, 0.1);
+    transition: all 0.3s ease;
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.schedule-item.accepted {
+    background: rgba(76, 175, 80, 0.1);
+    border-color: rgba(76, 175, 80, 0.3);
+}
+
+.schedule-item.rejected {
+    background: rgba(255, 68, 68, 0.1);
+    border-color: rgba(255, 68, 68, 0.3);
+    opacity: 0.6;
 }
 
 .schedule-info {
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    padding: 16px;
-    background: rgba(255, 85, 0, 0.05);
-    border-radius: 12px;
-    border: 2px solid rgba(255, 85, 0, 0.1);
-}
-
-.schedule-title,
-.schedule-date {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 0.95rem;
+    gap: 8px;
+    flex: 1;
 }
 
 .schedule-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.95rem;
     font-weight: 600;
     color: #333;
 }
 
 .schedule-title i {
     color: #FF5500;
-    font-size: 1.1rem;
-    width: 20px;
+    font-size: 1rem;
+    width: 16px;
     text-align: center;
 }
 
 .schedule-date {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.85rem;
     color: #666;
 }
 
 .schedule-date i {
     color: #4CAF50;
-    font-size: 1.1rem;
-    width: 20px;
+    font-size: 0.9rem;
+    width: 16px;
     text-align: center;
 }
 
-.confirm-buttons {
+.item-actions {
     display: flex;
-    gap: 12px;
+    gap: 8px;
+    align-items: center;
 }
 
-.confirm-btn {
-    flex: 1;
+.item-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    padding: 14px 20px;
-    border: none;
-    border-radius: 12px;
     font-size: 0.9rem;
-    font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
+    flex-shrink: 0;
 }
 
-.confirm-btn.accept {
+.item-btn.accept {
     background: #4CAF50;
     color: white;
 }
 
-.confirm-btn.accept:hover {
+.item-btn.accept:hover {
     background: #45a049;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.4);
 }
 
-.confirm-btn.reject {
+.item-btn.reject {
     background: #ff4444;
     color: white;
 }
 
-.confirm-btn.reject:hover {
+.item-btn.reject:hover {
     background: #e63939;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(255, 68, 68, 0.3);
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(255, 68, 68, 0.4);
 }
 
-.confirm-btn:active {
-    transform: translateY(0);
+.item-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.item-btn:active {
+    transform: scale(0.95);
 }
 
 /* Animation for modal appearance */

@@ -164,25 +164,8 @@
             </div>
             <div class="modal-body">
                 <div class="schedule-confirm-content">
-                    <div class="schedule-info">
-                        <div class="schedule-title">
-                            <i class="fas fa-calendar-check"></i>
-                            <span id="confirmScheduleTitle">일정 제목</span>
-                        </div>
-                        <div class="schedule-date">
-                            <i class="fas fa-clock"></i>
-                            <span id="confirmScheduleDate">2024년 1월 1일</span>
-                        </div>
-                    </div>
-                    <div class="confirm-buttons">
-                        <button class="confirm-btn accept" id="acceptSchedule">
-                            <i class="fas fa-check"></i>
-                            <span>추가</span>
-                        </button>
-                        <button class="confirm-btn reject" id="rejectSchedule">
-                            <i class="fas fa-times"></i>
-                            <span>취소</span>
-                        </button>
+                    <div class="schedule-items" id="scheduleItems">
+                        <!-- Schedule items will be dynamically generated -->
                     </div>
                 </div>
             </div>
@@ -193,11 +176,14 @@
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loading-spinner">
             <i class="fas fa-spinner fa-spin"></i>
-            <p>AI가 일정을 분석하고 있습니다...</p>
+            <p id="loadingText">AI가 일정을 분석하고 있습니다...</p>
+            <div class="loading-progress" id="loadingProgress">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
         </div>
     </div>
 
     <script src="config.js"></script>
-    <script src="script.js?v=20241220-schedule-confirmation"></script>
+    <script src="script.js?v=20241220-progress-disappear"></script>
 </body>
 </html> 
