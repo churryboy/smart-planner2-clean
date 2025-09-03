@@ -948,8 +948,8 @@ body.modal-open {
     background: #000;
     border-radius: 8px 8px 0 0;
     overflow: hidden;
-    flex: 1;
-    min-height: 0;
+    height: 300px;
+    flex-shrink: 0;
 }
 
 #cropCanvas {
@@ -1110,8 +1110,8 @@ body.modal-open {
     }
     
     .crop-canvas-container {
-        flex: 1;
-        min-height: 0;
+        height: 300px;
+        flex-shrink: 0;
         border-radius: 0;
     }
     
