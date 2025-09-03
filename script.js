@@ -3721,19 +3721,8 @@ async function processCroppedImageForOCR(croppedFile) {
         // Handle response same as original handleImageUpload
         if (response && response.fallback && response.error === 'CLAUDE_OVERLOADED') {
             console.log('🔄 Claude API overloaded, using intelligent fallback...');
-            
-            const fallbackText = `
-9월 10일: 수능 보기
-9월 23일: 원서 접수
-9월 25일: 면접
-            `.trim();
-            
-            const clientParsed = parseKoreanScheduleTextClient(fallbackText);
-            if (clientParsed && clientParsed.length > 0) {
-                hideLoading();
-                showScheduleConfirmation(clientParsed);
-                return;
-            }
+            showErrorMessage('Claude API가 일시적으로 과부하 상태입니다. 잠시 후 다시 시도해주세요.');
+            return;
         }
         
         if (response && (response.content || response.success)) {
