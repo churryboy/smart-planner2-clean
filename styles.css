@@ -536,8 +536,8 @@ body {
     overscroll-behavior: contain;
 }
 
-/* Prevent body scroll when modal is active */
-body.modal-open {
+/* Prevent body scroll when crop modal is active */
+body.crop-modal-open {
     overflow: hidden;
     position: fixed;
     width: 100%;
@@ -827,6 +827,7 @@ body.modal-open {
     font-size: 0.95rem;
     font-weight: 600;
     color: #333;
+    flex: 1;
 }
 
 .schedule-title i {
@@ -901,6 +902,54 @@ body.modal-open {
 
 .item-btn:active {
     transform: scale(0.95);
+}
+
+/* Editable Title Styles */
+.editable-title {
+    flex: 1;
+    border: 1px solid transparent;
+    background: transparent;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #333;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    outline: none;
+    font-family: inherit;
+}
+
+.editable-title:hover {
+    background: rgba(255, 85, 0, 0.05);
+    border-color: rgba(255, 85, 0, 0.2);
+}
+
+.editable-title:focus {
+    background: white;
+    border-color: #FF5500;
+    box-shadow: 0 0 0 2px rgba(255, 85, 0, 0.1);
+}
+
+.edit-btn {
+    background: none;
+    border: none;
+    color: #666;
+    font-size: 0.8rem;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    opacity: 0.6;
+}
+
+.edit-btn:hover {
+    background: rgba(255, 85, 0, 0.1);
+    color: #FF5500;
+    opacity: 1;
+}
+
+.schedule-item:hover .edit-btn {
+    opacity: 1;
 }
 
 /* Animation for modal appearance */

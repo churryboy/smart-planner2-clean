@@ -1491,6 +1491,123 @@ async function sendAIMessage() {
  }
 
 // =============================================
+// Image Enhancement for Better OCR
+// =============================================
+
+// Enhance image quality for better OCR accuracy
+function enhanceImageForOCR(sourceCtx, sourceCanvas) {
+    console.log('🔧 Enhancing image quality for OCR...');
+    
+    // Create new canvas for enhancement
+    const enhancedCanvas = document.createElement('canvas');
+    const enhancedCtx = enhancedCanvas.getContext('2d');
+    
+    // Set canvas size
+    enhancedCanvas.width = sourceCanvas.width;
+    enhancedCanvas.height = sourceCanvas.height;
+    
+    // Get image data
+    const imageData = sourceCtx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
+    const data = imageData.data;
+    
+    // Enhancement parameters
+    const contrast = 1.5;    // Increase contrast
+    const brightness = 10;   // Slight brightness boost
+    const sharpening = 0.8;  // Sharpening factor
+    
+    // Apply contrast and brightness
+    for (let i = 0; i < data.length; i += 4) {
+        // Red, Green, Blue channels
+        data[i] = Math.min(255, Math.max(0, contrast * (data[i] - 128) + 128 + brightness));
+        data[i + 1] = Math.min(255, Math.max(0, contrast * (data[i + 1] - 128) + 128 + brightness));
+        data[i + 2] = Math.min(255, Math.max(0, contrast * (data[i + 2] - 128) + 128 + brightness));
+    }
+    
+    // Put enhanced image data
+    enhancedCtx.putImageData(imageData, 0, 0);
+    
+    // Apply unsharp mask for better text clarity
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d');
+    tempCanvas.width = sourceCanvas.width;
+    tempCanvas.height = sourceCanvas.height;
+    
+    // Draw blurred version
+    tempCtx.filter = 'blur(1px)';
+    tempCtx.drawImage(enhancedCanvas, 0, 0);
+    
+    // Composite for sharpening effect
+    enhancedCtx.globalCompositeOperation = 'source-over';
+    enhancedCtx.globalAlpha = 1 + sharpening;
+    enhancedCtx.drawImage(enhancedCanvas, 0, 0);
+    enhancedCtx.globalAlpha = -sharpening;
+    enhancedCtx.drawImage(tempCanvas, 0, 0);
+    
+    // Reset composite operation
+    enhancedCtx.globalCompositeOperation = 'source-over';
+    enhancedCtx.globalAlpha = 1;
+    
+         console.log('✨ Image enhancement complete');
+     return enhancedCanvas;
+ }
+
+// Process image specifically for OCR with higher quality
+async function processImageForOCR(file) {
+    console.log('🔧 Processing image for OCR with enhanced quality...');
+    
+    // For OCR, we want higher quality and larger dimensions
+    const MAX_SIZE = 2 * 1024 * 1024; // 2MB for OCR (higher than mobile)
+    const MAX_DIMENSION = 1600; // Larger dimensions for better text recognition
+    
+    console.log('📏 OCR size limits:', MAX_SIZE, 'bytes, max dimension:', MAX_DIMENSION);
+    
+    // Only resize if absolutely necessary
+    if (file.size > MAX_SIZE) {
+        console.log('⚠️ File too large for OCR, resizing:', file.size, 'bytes');
+        return await resizeImageForOCR(file, MAX_DIMENSION);
+    }
+    
+    console.log('✅ Image size acceptable for OCR, no resizing needed');
+    return file;
+}
+
+// Resize image specifically for OCR with quality preservation
+async function resizeImageForOCR(file, maxDimension) {
+    return new Promise((resolve) => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        
+        img.onload = function() {
+            const dimensions = getImageDimensions(img, maxDimension);
+            
+            canvas.width = dimensions.width;
+            canvas.height = dimensions.height;
+            
+            // High quality settings for OCR
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            
+            // Draw image
+            ctx.drawImage(img, 0, 0, dimensions.width, dimensions.height);
+            
+            // Convert to blob with higher quality (90% instead of 50%)
+            canvas.toBlob((blob) => {
+                const resizedFile = new File([blob], file.name, {
+                    type: file.type,
+                    lastModified: Date.now()
+                });
+                
+                console.log('✅ Image resized for OCR:', file.size, '→', resizedFile.size, 'bytes');
+                resolve(resizedFile);
+            }, file.type, 0.9); // Higher quality for OCR
+        };
+        
+        img.src = URL.createObjectURL(file);
+    });
+}
+
+// =============================================
 // Crop Box Interaction Handlers
 // =============================================
 
@@ -3323,7 +3440,13 @@ function showScheduleConfirmation(eventsArray) {
                 <div class="schedule-info">
                     <div class="schedule-title">
                         <i class="fas fa-calendar-check"></i>
-                        <span>${eventData.title}</span>
+                        <input type="text" class="editable-title" value="${eventData.title}" 
+                               data-original="${eventData.title}" 
+                               onchange="updateEventTitle(${index}, this.value)"
+                               placeholder="일정 제목을 수정하세요">
+                        <button class="edit-btn" onclick="focusTitle(${index})" title="제목 수정">
+                            <i class="fas fa-edit"></i>
+                        </button>
                     </div>
                     <div class="schedule-date">
                         <i class="fas fa-clock"></i>
@@ -3467,6 +3590,45 @@ function hideScheduleConfirmation() {
 }
 
 // =============================================
+// Title Editing Functions
+// =============================================
+
+// Update event title when user edits it
+function updateEventTitle(eventIndex, newTitle) {
+    const modal = document.getElementById('scheduleConfirmModal');
+    const eventsData = JSON.parse(modal.dataset.eventsData);
+    
+    // Update the event data
+    eventsData[eventIndex].title = newTitle.trim();
+    
+    // Save back to modal dataset
+    modal.dataset.eventsData = JSON.stringify(eventsData);
+    
+    console.log(`📝 Event ${eventIndex} title updated to:`, newTitle.trim());
+}
+
+// Focus on title input for editing
+function focusTitle(eventIndex) {
+    const titleInput = document.querySelector(`[data-event-index="${eventIndex}"] .editable-title`);
+    if (titleInput) {
+        titleInput.focus();
+        titleInput.select(); // Select all text for easy replacement
+        console.log('✏️ Title input focused for editing');
+    }
+}
+
+// Reset title to original OCR value
+function resetTitle(eventIndex) {
+    const titleInput = document.querySelector(`[data-event-index="${eventIndex}"] .editable-title`);
+    if (titleInput) {
+        const originalTitle = titleInput.dataset.original;
+        titleInput.value = originalTitle;
+        updateEventTitle(eventIndex, originalTitle);
+        console.log('🔄 Title reset to original:', originalTitle);
+    }
+}
+
+// =============================================
 // Image Crop Tool Functions
 // =============================================
 
@@ -3505,7 +3667,7 @@ function showImageCropModal(imageFile) {
     
     // Show modal and prevent background scrolling
     modal.classList.add('active');
-    document.body.classList.add('modal-open');
+    document.body.classList.add('crop-modal-open');
 }
 
 // Setup canvas with image
@@ -3657,22 +3819,25 @@ async function confirmCrop() {
             0, 0, actualWidth, actualHeight
         );
         
-        // Convert to blob and proceed with OCR
-        croppedCanvas.toBlob(async (blob) => {
+        // Enhance image quality before converting to blob
+        const enhancedCanvas = enhanceImageForOCR(croppedCtx, croppedCanvas);
+        
+        // Convert enhanced image to blob and proceed with OCR
+        enhancedCanvas.toBlob(async (blob) => {
             // Create file from blob
-            const croppedFile = new File([blob], `cropped_${currentImage.name}`, {
+            const croppedFile = new File([blob], `enhanced_cropped_${currentImage.name}`, {
                 type: currentImage.type,
                 lastModified: Date.now()
             });
             
-            console.log('✂️ Cropped image created:', croppedFile.name, croppedFile.size, 'bytes');
+            console.log('✂️ Enhanced cropped image created:', croppedFile.name, croppedFile.size, 'bytes');
             
             // Hide crop modal
             hideImageCropModal();
             
-            // Proceed with OCR using cropped image
+            // Proceed with OCR using enhanced image
             await processCroppedImageForOCR(croppedFile);
-        }, currentImage.type, 0.9);
+        }, currentImage.type, 0.95);
     };
     
     const reader = new FileReader();
@@ -3686,7 +3851,18 @@ async function confirmCrop() {
 function hideImageCropModal() {
     const modal = document.getElementById('imageCropModal');
     modal.classList.remove('active');
-    document.body.classList.remove('modal-open');
+    document.body.classList.remove('crop-modal-open');
+
+    // Clean up crop interactions and restore scrolling
+    isDragging = false;
+    isResizing = false;
+    resizeHandle = null;
+
+    document.removeEventListener('mousemove', handleDragResize);
+    document.removeEventListener('touchmove', handleDragResize, { passive: false });
+    document.removeEventListener('mouseup', endDragResize);
+    document.removeEventListener('touchend', endDragResize);
+
     currentImage = null;
     cropBox = { x: 0, y: 0, width: 0, height: 0 };
 }
@@ -3700,8 +3876,8 @@ async function processCroppedImageForOCR(croppedFile) {
         showLoading();
         updateLoadingProgress(20, '📱 크롭된 이미지를 처리 중...');
         
-        // Process and potentially resize image for mobile compatibility
-        const processedFile = await processImageForMobile(croppedFile);
+        // Process image with higher quality for OCR
+        const processedFile = await processImageForOCR(croppedFile);
         console.log('🔄 Cropped image processed for mobile compatibility');
         
         // Convert image to base64
@@ -3711,7 +3887,18 @@ async function processCroppedImageForOCR(croppedFile) {
         
         // Send image to Claude for OCR and schedule extraction
         updateLoadingProgress(60, '🤖 AI가 크롭된 이미지에서 일정을 추출 중...');
-        const ocrMessage = `이 이미지를 분석하여 모든 일정이나 캘린더 정보를 추출해주세요. 날짜, 시간, 이벤트, 약속 등의 모든 일정 정보를 찾아서 JSON 형식으로 응답해주세요. 여러 일정이 있으면 모든 일정을 배열로 응답해주세요.`;
+        const ocrMessage = `이 한국 학교 학사일정 캘린더를 매우 정확하게 분석해주세요.
+
+중요: 다음 단어들을 정확히 구별해서 읽어주세요:
+- "전국연합학력평가" (전국연합학력평가)
+- "재량휴업일" (재량휴업일) 
+- "현장체험학습" (현장체험학습)
+- "개교기념일" (개교기념일)
+- "중간고사", "기말고사"
+- "수학여행"
+
+각 날짜별로 정확한 행사명을 읽고, 모든 일정을 빠뜨리지 말고 JSON 배열로 응답해주세요.
+특히 작은 글씨나 괄호 안의 내용도 정확히 읽어주세요.`;
         
         const response = await callClaudeAPIWithImage(ocrMessage, imageData.base64, imageData.mediaType);
         updateLoadingProgress(90, '📋 일정 정보를 처리 중...');
