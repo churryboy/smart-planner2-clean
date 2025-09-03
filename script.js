@@ -3560,13 +3560,13 @@ function initializeCropBox() {
     const overlay = document.getElementById('cropOverlay');
     const cropBoxElement = document.getElementById('cropBox');
     
-    // Set initial crop box to center 30% of image (much smaller, centered)
-    const margin = Math.min(canvas.width, canvas.height) * 0.15; // 15% margin on all sides
+    // Set initial crop box to center 20% of image (very small, centered)
+    const margin = Math.min(canvas.width, canvas.height) * 0.25; // 25% margin on all sides
     const maxWidth = canvas.width - (margin * 2);
     const maxHeight = canvas.height - (margin * 2);
     
-    const boxWidth = Math.min(maxWidth * 0.6, maxWidth); // 60% of available space
-    const boxHeight = Math.min(maxHeight * 0.6, maxHeight);
+    const boxWidth = Math.min(maxWidth * 0.5, 200); // Much smaller: max 200px or 50% of available
+    const boxHeight = Math.min(maxHeight * 0.5, 150); // Much smaller: max 150px or 50% of available
     const boxX = (canvas.width - boxWidth) / 2;
     const boxY = (canvas.height - boxHeight) / 2;
     
