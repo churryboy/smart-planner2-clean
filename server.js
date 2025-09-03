@@ -5,7 +5,7 @@ const path = require('path');
 const https = require('https');
 
 const app = express();
-const PORT = process.env.PORT || 8080; // Use 8080 for local development
+const PORT = process.env.PORT || 10000; // Use 10000 for both local and production
 
 // CORS configuration for production and development
 const corsOptions = {

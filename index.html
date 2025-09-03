@@ -153,6 +153,52 @@
         </div>
     </div>
 
+    <!-- Image Crop Modal -->
+    <div class="modal" id="imageCropModal">
+        <div class="modal-content crop-modal">
+            <div class="modal-header">
+                <h3>이미지 자르기</h3>
+                <button class="modal-close" id="cropModalClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="crop-container">
+                    <div class="crop-canvas-container">
+                        <canvas id="cropCanvas"></canvas>
+                        <div class="crop-overlay" id="cropOverlay">
+                            <div class="crop-box" id="cropBox">
+                                <div class="crop-handle top-left"></div>
+                                <div class="crop-handle top-right"></div>
+                                <div class="crop-handle bottom-left"></div>
+                                <div class="crop-handle bottom-right"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="crop-controls">
+                        <div class="crop-info">
+                            <span id="cropDimensions">선택 영역: 0 x 0</span>
+                        </div>
+                        <div class="crop-buttons">
+                            <button class="crop-btn reset" id="resetCrop">
+                                <i class="fas fa-undo"></i>
+                                초기화
+                            </button>
+                            <button class="crop-btn cancel" id="cancelCrop">
+                                <i class="fas fa-times"></i>
+                                취소
+                            </button>
+                            <button class="crop-btn confirm" id="confirmCrop">
+                                <i class="fas fa-check"></i>
+                                확인
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Schedule Confirmation Modal -->
     <div class="modal" id="scheduleConfirmModal">
         <div class="modal-content schedule-confirm-modal">
@@ -184,6 +230,6 @@
     </div>
 
     <script src="config.js"></script>
-    <script src="script.js?v=20241220-progress-disappear"></script>
+    <script src="script.js?v=20241220-crop-tool"></script>
 </body>
 </html> 

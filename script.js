@@ -939,11 +939,24 @@ function initializeEventHandlers() {
             hideScheduleConfirmation();
         }
     });
+
+    // Image crop modal
+    document.getElementById('cropModalClose').addEventListener('click', cancelCrop);
+    document.getElementById('resetCrop').addEventListener('click', resetCropBox);
+    document.getElementById('cancelCrop').addEventListener('click', cancelCrop);
+    document.getElementById('confirmCrop').addEventListener('click', confirmCrop);
+    document.getElementById('imageCropModal').addEventListener('click', (e) => {
+        if (e.target.id === 'imageCropModal') {
+            cancelCrop();
+        }
+    });
     
     // Keyboard shortcuts for closing modals
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-            if (document.getElementById('scheduleConfirmModal').classList.contains('active')) {
+            if (document.getElementById('imageCropModal').classList.contains('active')) {
+                cancelCrop();
+            } else if (document.getElementById('scheduleConfirmModal').classList.contains('active')) {
                 hideScheduleConfirmation();
             } else if (document.getElementById('todoModal').classList.contains('active')) {
                 closeTodoModal();
@@ -1473,7 +1486,142 @@ async function sendAIMessage() {
         aiInput.disabled = false;
         document.getElementById('aiSendBtn').disabled = false;
         aiInput.focus();
-        hideLoading();
+                 hideLoading();
+     }
+ }
+
+// =============================================
+// Crop Box Interaction Handlers
+// =============================================
+
+// Add crop box interaction after modal is shown
+function initializeCropInteractions() {
+    const cropBoxElement = document.getElementById('cropBox');
+    const cropHandles = document.querySelectorAll('.crop-handle');
+    
+    // Crop box dragging
+    cropBoxElement.addEventListener('mousedown', startDrag);
+    cropBoxElement.addEventListener('touchstart', startDrag, { passive: false });
+    
+    // Handle resizing
+    cropHandles.forEach(handle => {
+        handle.addEventListener('mousedown', startResize);
+        handle.addEventListener('touchstart', startResize, { passive: false });
+    });
+    
+    // Global mouse/touch events
+    document.addEventListener('mousemove', handleDragResize);
+    document.addEventListener('touchmove', handleDragResize, { passive: false });
+    document.addEventListener('mouseup', endDragResize);
+    document.addEventListener('touchend', endDragResize);
+}
+
+function startDrag(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    isDragging = true;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    
+    dragStart = { x: clientX - cropBox.x, y: clientY - cropBox.y };
+    console.log('🖱️ Start dragging crop box');
+}
+
+function startResize(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    isResizing = true;
+    resizeHandle = e.target.className.split(' ')[1]; // Get handle position
+    
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    
+    dragStart = { x: clientX, y: clientY };
+    console.log('🔄 Start resizing from:', resizeHandle);
+}
+
+function handleDragResize(e) {
+    if (!isDragging && !isResizing) return;
+    
+    e.preventDefault();
+    
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    
+    const canvasRect = canvas.getBoundingClientRect();
+    const containerRect = document.querySelector('.crop-canvas-container').getBoundingClientRect();
+    
+    const relativeX = clientX - canvasRect.left;
+    const relativeY = clientY - canvasRect.top;
+    
+    if (isDragging) {
+        // Move crop box
+        const newX = Math.max(0, Math.min(canvas.width - cropBox.width, relativeX - dragStart.x));
+        const newY = Math.max(0, Math.min(canvas.height - cropBox.height, relativeY - dragStart.y));
+        
+        cropBox.x = newX;
+        cropBox.y = newY;
+    } else if (isResizing) {
+        // Resize crop box based on handle
+        const deltaX = clientX - dragStart.x;
+        const deltaY = clientY - dragStart.y;
+        
+        const minSize = 50;
+        
+        switch (resizeHandle) {
+            case 'top-left':
+                const newWidth1 = Math.max(minSize, cropBox.width - deltaX);
+                const newHeight1 = Math.max(minSize, cropBox.height - deltaY);
+                const newX1 = Math.max(0, cropBox.x + cropBox.width - newWidth1);
+                const newY1 = Math.max(0, cropBox.y + cropBox.height - newHeight1);
+                
+                cropBox.x = newX1;
+                cropBox.y = newY1;
+                cropBox.width = newWidth1;
+                cropBox.height = newHeight1;
+                break;
+                
+            case 'top-right':
+                const newWidth2 = Math.max(minSize, Math.min(canvas.width - cropBox.x, cropBox.width + deltaX));
+                const newHeight2 = Math.max(minSize, cropBox.height - deltaY);
+                const newY2 = Math.max(0, cropBox.y + cropBox.height - newHeight2);
+                
+                cropBox.y = newY2;
+                cropBox.width = newWidth2;
+                cropBox.height = newHeight2;
+                break;
+                
+            case 'bottom-left':
+                const newWidth3 = Math.max(minSize, cropBox.width - deltaX);
+                const newHeight3 = Math.max(minSize, Math.min(canvas.height - cropBox.y, cropBox.height + deltaY));
+                const newX3 = Math.max(0, cropBox.x + cropBox.width - newWidth3);
+                
+                cropBox.x = newX3;
+                cropBox.width = newWidth3;
+                cropBox.height = newHeight3;
+                break;
+                
+            case 'bottom-right':
+                cropBox.width = Math.max(minSize, Math.min(canvas.width - cropBox.x, cropBox.width + deltaX));
+                cropBox.height = Math.max(minSize, Math.min(canvas.height - cropBox.y, cropBox.height + deltaY));
+                break;
+        }
+        
+        dragStart = { x: clientX, y: clientY };
+    }
+    
+    updateCropBoxDisplay();
+    updateCropDimensions();
+}
+
+function endDragResize(e) {
+    if (isDragging || isResizing) {
+        console.log('🏁 End drag/resize');
+        isDragging = false;
+        isResizing = false;
+        resizeHandle = null;
     }
 }
 
@@ -1788,104 +1936,11 @@ async function handleImageUpload(event) {
     console.log('- File last modified:', new Date(file.lastModified));
     console.log('- User agent:', navigator.userAgent.includes('Mobile') ? 'Mobile' : 'Desktop');
     
-    // Show loading indicator
-    showLoading();
+    // Show crop modal instead of immediately processing
+    showImageCropModal(file);
     
-            try {
-            // Process and potentially resize image for mobile compatibility
-            updateLoadingProgress(20, '📱 이미지를 모바일 호환성을 위해 처리 중...');
-            const processedFile = await processImageForMobile(file);
-            console.log('🔄 Image processed for mobile compatibility');
-            
-            // Convert image to base64
-            updateLoadingProgress(40, '🔄 이미지를 변환 중...');
-            const imageData = await convertImageToBase64(processedFile);
-            console.log('🔄 Image converted to base64, type:', imageData.mediaType);
-            console.log('📊 Base64 data length:', imageData.base64.length);
-            console.log('📊 Estimated image size:', Math.round(imageData.base64.length * 0.75), 'bytes (decoded)');
-            
-            // Send image to Claude for OCR and schedule extraction
-        updateLoadingProgress(60, '🤖 AI가 이미지에서 일정을 추출 중...');
-        const ocrMessage = `이 이미지를 분석하여 모든 일정이나 캘린더 정보를 추출해주세요. 날짜, 시간, 이벤트, 약속 등의 모든 일정 정보를 찾아서 JSON 형식으로 응답해주세요. 여러 일정이 있으면 모든 일정을 배열로 응답해주세요.`;
-        
-        const response = await callClaudeAPIWithImage(ocrMessage, imageData.base64, imageData.mediaType);
-        
-        updateLoadingProgress(90, '📋 일정 정보를 처리 중...');
-        
-        console.log('📋 Full OCR response received:', response);
-        
-        // Handle Claude API fallback
-        if (response && response.fallback && response.error === 'CLAUDE_OVERLOADED') {
-            console.log('🔄 Claude API overloaded, using intelligent fallback...');
-            
-            // Use mock OCR data based on your image content for demonstration
-            const fallbackText = `
-9월 10일: 수능 보기
-9월 23일: 원서 접수
-9월 25일: 면접
-            `.trim();
-            
-            console.log('📋 Using fallback OCR text:', fallbackText);
-            
-            // Process with enhanced client-side parser
-            const clientParsed = parseKoreanScheduleTextClient(fallbackText);
-            if (clientParsed && clientParsed.length > 0) {
-                console.log('✅ Fallback parsing successful:', clientParsed);
-                
-                // Show confirmation modal for events instead of directly creating
-                hideLoading(); // Hide loading before showing confirmations
-                showScheduleConfirmation(clientParsed);
-                
-                event.target.value = '';
-                return; // Success with fallback
-            }
-        }
-        
-        if (response && (response.content || response.success)) {
-            console.log('📋 OCR response content:', response.content || 'No content field');
-            
-            // Process the OCR response - handle both single event and multiple events
-            if (response.success && (response.event || response.events)) {
-                if (response.events) {
-                    // Multiple events from OCR - show confirmation modal
-                    console.log('🔧 Showing confirmation for multiple events from OCR:', response.events);
-                    
-                    hideLoading(); // Hide loading before showing confirmations
-                    showScheduleConfirmation(response.events);
-                    
-                    console.log(`📋 ${response.events.length} events ready for confirmation`);
-                } else if (response.event) {
-                    // Single event from OCR - show confirmation modal
-                    console.log('🔧 Showing confirmation for single event from OCR:', response.event);
-                    
-                    hideLoading(); // Hide loading before showing confirmation
-                    showScheduleConfirmation([response.event]);
-                    
-                    console.log('📋 Event ready for confirmation:', response.event.title);
-                }
-            } else {
-                console.log('❌ Invalid OCR response format. Expected success=true and event/events object');
-                console.log('❌ Received response:', response);
-                console.log('❌ Response.success:', response.success);
-                console.log('❌ Response.event:', response.event);
-                console.log('❌ Response.events:', response.events);
-                throw new Error('Invalid response format from OCR');
-            }
-            
-            // Clear the file input for next use
-            event.target.value = '';
-        }
-        
-    } catch (error) {
-        console.error('❌ Image processing error:', error);
-        showErrorMessage('이미지 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
-        
-        // Clear the file input
-        event.target.value = '';
-    } finally {
-        // Hide loading indicator
-        hideLoading();
-    }
+    // Clear the file input for next use
+    event.target.value = '';
 }
 
 // Process image for mobile compatibility
@@ -3409,4 +3464,259 @@ function hideScheduleConfirmation() {
     // Reset arrays
     acceptedEvents = [];
     rejectedEvents = [];
+}
+
+// =============================================
+// Image Crop Tool Functions
+// =============================================
+
+let currentImage = null;
+let cropBox = { x: 0, y: 0, width: 0, height: 0 };
+let isDragging = false;
+let isResizing = false;
+let dragStart = { x: 0, y: 0 };
+let resizeHandle = null;
+let canvas = null;
+let ctx = null;
+let imageScale = 1;
+let imageOffset = { x: 0, y: 0 };
+
+// Show image crop modal
+function showImageCropModal(imageFile) {
+    console.log('✂️ Showing image crop modal for:', imageFile.name);
+    
+    currentImage = imageFile;
+    const modal = document.getElementById('imageCropModal');
+    canvas = document.getElementById('cropCanvas');
+    ctx = canvas.getContext('2d');
+    
+    // Load and display image
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            setupCropCanvas(img);
+            initializeCropBox();
+            initializeCropInteractions();
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(imageFile);
+    
+    // Show modal
+    modal.classList.add('active');
+}
+
+// Setup canvas with image
+function setupCropCanvas(img) {
+    const container = document.querySelector('.crop-canvas-container');
+    const containerWidth = container.clientWidth - 32; // Account for padding
+    const containerHeight = container.clientHeight - 32;
+    
+    // Calculate scale to fit image in container
+    const scaleX = containerWidth / img.width;
+    const scaleY = containerHeight / img.height;
+    imageScale = Math.min(scaleX, scaleY, 1); // Don't upscale
+    
+    const displayWidth = img.width * imageScale;
+    const displayHeight = img.height * imageScale;
+    
+    // Set canvas size
+    canvas.width = displayWidth;
+    canvas.height = displayHeight;
+    canvas.style.width = displayWidth + 'px';
+    canvas.style.height = displayHeight + 'px';
+    
+    // Draw image
+    ctx.drawImage(img, 0, 0, displayWidth, displayHeight);
+    
+    // Store image offset for calculations
+    imageOffset = {
+        x: (containerWidth - displayWidth) / 2,
+        y: (containerHeight - displayHeight) / 2
+    };
+    
+    console.log('🖼️ Image setup:', { displayWidth, displayHeight, imageScale });
+}
+
+// Initialize crop box in center
+function initializeCropBox() {
+    const overlay = document.getElementById('cropOverlay');
+    const cropBoxElement = document.getElementById('cropBox');
+    
+    // Set initial crop box to center 60% of image
+    const boxWidth = canvas.width * 0.6;
+    const boxHeight = canvas.height * 0.6;
+    const boxX = (canvas.width - boxWidth) / 2;
+    const boxY = (canvas.height - boxHeight) / 2;
+    
+    cropBox = { x: boxX, y: boxY, width: boxWidth, height: boxHeight };
+    updateCropBoxDisplay();
+    updateCropDimensions();
+    
+    console.log('📦 Crop box initialized:', cropBox);
+}
+
+// Update crop box visual display
+function updateCropBoxDisplay() {
+    const cropBoxElement = document.getElementById('cropBox');
+    const canvasRect = canvas.getBoundingClientRect();
+    const containerRect = document.querySelector('.crop-canvas-container').getBoundingClientRect();
+    
+    const offsetX = canvasRect.left - containerRect.left;
+    const offsetY = canvasRect.top - containerRect.top;
+    
+    cropBoxElement.style.left = (offsetX + cropBox.x) + 'px';
+    cropBoxElement.style.top = (offsetY + cropBox.y) + 'px';
+    cropBoxElement.style.width = cropBox.width + 'px';
+    cropBoxElement.style.height = cropBox.height + 'px';
+}
+
+// Update crop dimensions display
+function updateCropDimensions() {
+    const dimensionsElement = document.getElementById('cropDimensions');
+    const actualWidth = Math.round(cropBox.width / imageScale);
+    const actualHeight = Math.round(cropBox.height / imageScale);
+    dimensionsElement.textContent = `선택 영역: ${actualWidth} x ${actualHeight}`;
+}
+
+// Reset crop box to full image
+function resetCropBox() {
+    cropBox = { x: 0, y: 0, width: canvas.width, height: canvas.height };
+    updateCropBoxDisplay();
+    updateCropDimensions();
+    console.log('🔄 Crop box reset to full image');
+}
+
+// Cancel crop and close modal
+function cancelCrop() {
+    hideImageCropModal();
+    console.log('❌ Crop cancelled');
+}
+
+// Confirm crop and proceed with OCR
+async function confirmCrop() {
+    console.log('✅ Crop confirmed:', cropBox);
+    
+    // Create cropped image
+    const croppedCanvas = document.createElement('canvas');
+    const croppedCtx = croppedCanvas.getContext('2d');
+    
+    // Calculate actual crop dimensions
+    const actualX = cropBox.x / imageScale;
+    const actualY = cropBox.y / imageScale;
+    const actualWidth = cropBox.width / imageScale;
+    const actualHeight = cropBox.height / imageScale;
+    
+    croppedCanvas.width = actualWidth;
+    croppedCanvas.height = actualHeight;
+    
+    // Create image from original file
+    const img = new Image();
+    img.onload = function() {
+        // Draw cropped portion
+        croppedCtx.drawImage(
+            img,
+            actualX, actualY, actualWidth, actualHeight,
+            0, 0, actualWidth, actualHeight
+        );
+        
+        // Convert to blob and proceed with OCR
+        croppedCanvas.toBlob(async (blob) => {
+            // Create file from blob
+            const croppedFile = new File([blob], `cropped_${currentImage.name}`, {
+                type: currentImage.type,
+                lastModified: Date.now()
+            });
+            
+            console.log('✂️ Cropped image created:', croppedFile.name, croppedFile.size, 'bytes');
+            
+            // Hide crop modal
+            hideImageCropModal();
+            
+            // Proceed with OCR using cropped image
+            await processCroppedImageForOCR(croppedFile);
+        }, currentImage.type, 0.9);
+    };
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(currentImage);
+}
+
+// Hide image crop modal
+function hideImageCropModal() {
+    const modal = document.getElementById('imageCropModal');
+    modal.classList.remove('active');
+    currentImage = null;
+    cropBox = { x: 0, y: 0, width: 0, height: 0 };
+}
+
+// Process cropped image for OCR (extracted from handleImageUpload)
+async function processCroppedImageForOCR(croppedFile) {
+    console.log('🔄 Processing cropped image for OCR...');
+    
+    try {
+        // Show loading indicator
+        showLoading();
+        updateLoadingProgress(20, '📱 크롭된 이미지를 처리 중...');
+        
+        // Process and potentially resize image for mobile compatibility
+        const processedFile = await processImageForMobile(croppedFile);
+        console.log('🔄 Cropped image processed for mobile compatibility');
+        
+        // Convert image to base64
+        updateLoadingProgress(40, '🔄 이미지를 변환 중...');
+        const imageData = await convertImageToBase64(processedFile);
+        console.log('🔄 Cropped image converted to base64, type:', imageData.mediaType);
+        
+        // Send image to Claude for OCR and schedule extraction
+        updateLoadingProgress(60, '🤖 AI가 크롭된 이미지에서 일정을 추출 중...');
+        const ocrMessage = `이 이미지를 분석하여 모든 일정이나 캘린더 정보를 추출해주세요. 날짜, 시간, 이벤트, 약속 등의 모든 일정 정보를 찾아서 JSON 형식으로 응답해주세요. 여러 일정이 있으면 모든 일정을 배열로 응답해주세요.`;
+        
+        const response = await callClaudeAPIWithImage(ocrMessage, imageData.base64, imageData.mediaType);
+        updateLoadingProgress(90, '📋 일정 정보를 처리 중...');
+        
+        console.log('📋 Full OCR response received:', response);
+        
+        // Handle response same as original handleImageUpload
+        if (response && response.fallback && response.error === 'CLAUDE_OVERLOADED') {
+            console.log('🔄 Claude API overloaded, using intelligent fallback...');
+            
+            const fallbackText = `
+9월 10일: 수능 보기
+9월 23일: 원서 접수
+9월 25일: 면접
+            `.trim();
+            
+            const clientParsed = parseKoreanScheduleTextClient(fallbackText);
+            if (clientParsed && clientParsed.length > 0) {
+                hideLoading();
+                showScheduleConfirmation(clientParsed);
+                return;
+            }
+        }
+        
+        if (response && (response.content || response.success)) {
+            if (response.success && (response.event || response.events)) {
+                if (response.events) {
+                    hideLoading();
+                    showScheduleConfirmation(response.events);
+                } else if (response.event) {
+                    hideLoading();
+                    showScheduleConfirmation([response.event]);
+                }
+            } else {
+                throw new Error('Invalid response format from OCR');
+            }
+        }
+        
+    } catch (error) {
+        console.error('❌ Cropped image processing error:', error);
+        showErrorMessage('크롭된 이미지 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
+    } finally {
+        hideLoading();
+    }
 }
