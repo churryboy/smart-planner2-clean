@@ -931,11 +931,23 @@ function initializeEventHandlers() {
             closeTodoModal();
         }
     });
+
+    // Schedule confirmation modal
+    document.getElementById('scheduleConfirmClose').addEventListener('click', hideScheduleConfirmation);
+    document.getElementById('acceptSchedule').addEventListener('click', acceptScheduleAndContinue);
+    document.getElementById('rejectSchedule').addEventListener('click', rejectScheduleAndContinue);
+    document.getElementById('scheduleConfirmModal').addEventListener('click', (e) => {
+        if (e.target.id === 'scheduleConfirmModal') {
+            hideScheduleConfirmation();
+        }
+    });
     
     // Keyboard shortcuts for closing modals
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-            if (document.getElementById('todoModal').classList.contains('active')) {
+            if (document.getElementById('scheduleConfirmModal').classList.contains('active')) {
+                hideScheduleConfirmation();
+            } else if (document.getElementById('todoModal').classList.contains('active')) {
                 closeTodoModal();
             } else if (document.getElementById('eventModal').classList.contains('active')) {
                 closeModal();
@@ -1806,21 +1818,10 @@ async function handleImageUpload(event) {
             if (clientParsed && clientParsed.length > 0) {
                 console.log('✅ Fallback parsing successful:', clientParsed);
                 
-                // Create events from fallback parsing
-                clientParsed.forEach((eventData, index) => {
-                    const newEvent = {
-                        id: generateId(),
-                        ...eventData
-                    };
-                    events.push(newEvent);
-                    console.log(`✅ Fallback Event ${index + 1} created:`, newEvent.title);
-                });
+                // Show confirmation modal for each event instead of directly creating
+                hideLoading(); // Hide loading before showing confirmations
+                showMultipleScheduleConfirmations(clientParsed);
                 
-                saveEvents();
-                renderCalendar();
-                updateEventList();
-                
-                showSuccessMessage(`📷 이미지에서 ${clientParsed.length}개의 일정을 성공적으로 추출했습니다! (오프라인 처리)`);
                 event.target.value = '';
                 return; // Success with fallback
             }
@@ -1832,73 +1833,21 @@ async function handleImageUpload(event) {
             // Process the OCR response - handle both single event and multiple events
             if (response.success && (response.event || response.events)) {
                 if (response.events) {
-                    // Multiple events from OCR
-                    console.log('🔧 Creating multiple events from OCR response:', response.events);
+                    // Multiple events from OCR - show confirmation modal
+                    console.log('🔧 Showing confirmation for multiple events from OCR:', response.events);
                     
-                    response.events.forEach((eventData, index) => {
-                        const newEvent = {
-                            id: generateId(),
-                            ...eventData
-                        };
-                        
-                        events.push(newEvent);
-                        console.log(`✅ Event ${index + 1} created from OCR:`, newEvent.title);
-                    });
+                    hideLoading(); // Hide loading before showing confirmations
+                    showMultipleScheduleConfirmations(response.events);
                     
-                    saveEvents();
-                    renderCalendar();
-                    updateEventList();
-                    
-                    console.log(`🎉 Total ${response.events.length} events created from image`);
+                    console.log(`📋 ${response.events.length} events ready for confirmation`);
                 } else if (response.event) {
-                    // Single event from OCR
-                    console.log('🔧 Creating single event from OCR response:', response.event);
+                    // Single event from OCR - show confirmation modal
+                    console.log('🔧 Showing confirmation for single event from OCR:', response.event);
                     
-                    const newEvent = {
-                        id: generateId(),
-                        ...response.event
-                    };
+                    hideLoading(); // Hide loading before showing confirmation
+                    showScheduleConfirmation(response.event);
                     
-                    events.push(newEvent);
-                    saveEvents();
-                    renderCalendar();
-                    updateEventList();
-                    
-                    console.log('✅ Event created from OCR:', newEvent.title);
-                    
-                    // TEMPORARY FIX: Since we know the image contains 3 specific events,
-                    // let's add the missing ones manually based on the OCR pattern
-                    if (newEvent.title.includes('수능') || newEvent.title.includes('원서') || newEvent.title.includes('면접')) {
-                        console.log('🔧 Adding remaining events from known schedule...');
-                        
-                        const scheduleEvents = [
-                            { title: '수능 보기', date: '2025-09-10' },
-                            { title: '원서 접수', date: '2025-09-23' },
-                            { title: '면접', date: '2025-09-25' }
-                        ];
-                        
-                        scheduleEvents.forEach(eventData => {
-                            // Check if this event already exists
-                            const exists = events.some(e => e.title === eventData.title && e.date === eventData.date);
-                            if (!exists) {
-                                const additionalEvent = {
-                                    id: generateId(),
-                                    title: eventData.title,
-                                    date: eventData.date,
-                                    time: null,
-                                    description: `이미지에서 추출된 일정: ${eventData.title}`,
-                                    allDay: true
-                                };
-                                
-                                events.push(additionalEvent);
-                                console.log('➕ Added missing event:', additionalEvent.title);
-                            }
-                        });
-                        
-                        saveEvents();
-                        renderCalendar();
-                        updateEventList();
-                    }
+                    console.log('📋 Event ready for confirmation:', response.event.title);
                 }
             } else {
                 console.log('❌ Invalid OCR response format. Expected success=true and event/events object');
@@ -1911,9 +1860,6 @@ async function handleImageUpload(event) {
             
             // Clear the file input for next use
             event.target.value = '';
-            
-            const eventCount = response.events ? response.events.length : 1;
-            showSuccessMessage(`📷 이미지에서 ${eventCount}개의 일정을 성공적으로 추출했습니다!`);
         }
         
     } catch (error) {
@@ -3276,4 +3222,130 @@ function handleSwipeRight(item) {
             `;
         }
     }, 300);
-} 
+}
+
+// =============================================
+// Schedule Confirmation Modal Functions
+// =============================================
+
+let pendingScheduleEvents = []; // Store events waiting for confirmation
+
+// Show schedule confirmation modal
+function showScheduleConfirmation(eventData) {
+    console.log('📋 Showing schedule confirmation for:', eventData);
+    
+    const modal = document.getElementById('scheduleConfirmModal');
+    const titleElement = document.getElementById('confirmScheduleTitle');
+    const dateElement = document.getElementById('confirmScheduleDate');
+    
+    // Set event data
+    titleElement.textContent = eventData.title;
+    dateElement.textContent = formatDateForDisplay(eventData.date);
+    
+    // Store the event data for confirmation
+    modal.dataset.eventData = JSON.stringify(eventData);
+    
+    // Show modal
+    modal.classList.add('active');
+    
+    console.log('✅ Schedule confirmation modal displayed');
+}
+
+// Format date for display in Korean
+function formatDateForDisplay(dateStr) {
+    const date = new Date(dateStr);
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    
+    return `${year}년 ${month}월 ${day}일`;
+}
+
+// Hide schedule confirmation modal
+function hideScheduleConfirmation() {
+    const modal = document.getElementById('scheduleConfirmModal');
+    modal.classList.remove('active');
+    delete modal.dataset.eventData;
+}
+
+// Accept schedule and add to calendar
+function acceptSchedule() {
+    const modal = document.getElementById('scheduleConfirmModal');
+    const eventData = JSON.parse(modal.dataset.eventData);
+    
+    console.log('✅ Schedule accepted:', eventData.title);
+    
+    // Create and add the event
+    const newEvent = {
+        id: generateId(),
+        ...eventData
+    };
+    
+    events.push(newEvent);
+    saveEvents();
+    renderCalendar();
+    updateEventList();
+    
+    // Hide modal
+    hideScheduleConfirmation();
+    
+    // Show success message
+    showSuccessMessage(`📅 "${eventData.title}" 일정이 추가되었습니다!`);
+    
+    console.log('✅ Event added to calendar:', newEvent);
+}
+
+// Reject schedule
+function rejectSchedule() {
+    const modal = document.getElementById('scheduleConfirmModal');
+    const eventData = JSON.parse(modal.dataset.eventData);
+    
+    console.log('❌ Schedule rejected:', eventData.title);
+    
+    // Hide modal
+    hideScheduleConfirmation();
+    
+    // Show info message
+    showSuccessMessage('일정 추가가 취소되었습니다.');
+}
+
+// Process multiple schedule confirmations
+function showMultipleScheduleConfirmations(eventsArray) {
+    console.log('📋 Processing multiple schedule confirmations:', eventsArray.length, 'events');
+    
+    pendingScheduleEvents = [...eventsArray];
+    
+    if (pendingScheduleEvents.length > 0) {
+        showNextScheduleConfirmation();
+    }
+}
+
+// Show next pending schedule confirmation
+function showNextScheduleConfirmation() {
+    if (pendingScheduleEvents.length > 0) {
+        const nextEvent = pendingScheduleEvents.shift();
+        showScheduleConfirmation(nextEvent);
+    } else {
+        console.log('✅ All schedule confirmations completed');
+    }
+}
+
+// Modified accept function for multiple events
+function acceptScheduleAndContinue() {
+    acceptSchedule();
+    
+    // Show next confirmation if any pending
+    setTimeout(() => {
+        showNextScheduleConfirmation();
+    }, 500);
+}
+
+// Modified reject function for multiple events  
+function rejectScheduleAndContinue() {
+    rejectSchedule();
+    
+    // Show next confirmation if any pending
+    setTimeout(() => {
+        showNextScheduleConfirmation();
+    }, 500);
+}

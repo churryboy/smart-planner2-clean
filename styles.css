@@ -747,4 +747,118 @@ body {
     .day-number {
         font-size: 0.8rem;
     }
+}
+
+/* Schedule Confirmation Modal Styles */
+.schedule-confirm-modal {
+    max-width: 320px;
+}
+
+.schedule-confirm-content {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.schedule-info {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+    background: rgba(255, 85, 0, 0.05);
+    border-radius: 12px;
+    border: 2px solid rgba(255, 85, 0, 0.1);
+}
+
+.schedule-title,
+.schedule-date {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.95rem;
+}
+
+.schedule-title {
+    font-weight: 600;
+    color: #333;
+}
+
+.schedule-title i {
+    color: #FF5500;
+    font-size: 1.1rem;
+    width: 20px;
+    text-align: center;
+}
+
+.schedule-date {
+    color: #666;
+}
+
+.schedule-date i {
+    color: #4CAF50;
+    font-size: 1.1rem;
+    width: 20px;
+    text-align: center;
+}
+
+.confirm-buttons {
+    display: flex;
+    gap: 12px;
+}
+
+.confirm-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 20px;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.confirm-btn.accept {
+    background: #4CAF50;
+    color: white;
+}
+
+.confirm-btn.accept:hover {
+    background: #45a049;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.confirm-btn.reject {
+    background: #ff4444;
+    color: white;
+}
+
+.confirm-btn.reject:hover {
+    background: #e63939;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 68, 68, 0.3);
+}
+
+.confirm-btn:active {
+    transform: translateY(0);
+}
+
+/* Animation for modal appearance */
+.modal.active .schedule-confirm-modal {
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 } 

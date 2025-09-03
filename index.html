@@ -153,6 +153,42 @@
         </div>
     </div>
 
+    <!-- Schedule Confirmation Modal -->
+    <div class="modal" id="scheduleConfirmModal">
+        <div class="modal-content schedule-confirm-modal">
+            <div class="modal-header">
+                <h3>일정 추가 확인</h3>
+                <button class="modal-close" id="scheduleConfirmClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="schedule-confirm-content">
+                    <div class="schedule-info">
+                        <div class="schedule-title">
+                            <i class="fas fa-calendar-check"></i>
+                            <span id="confirmScheduleTitle">일정 제목</span>
+                        </div>
+                        <div class="schedule-date">
+                            <i class="fas fa-clock"></i>
+                            <span id="confirmScheduleDate">2024년 1월 1일</span>
+                        </div>
+                    </div>
+                    <div class="confirm-buttons">
+                        <button class="confirm-btn accept" id="acceptSchedule">
+                            <i class="fas fa-check"></i>
+                            <span>추가</span>
+                        </button>
+                        <button class="confirm-btn reject" id="rejectSchedule">
+                            <i class="fas fa-times"></i>
+                            <span>취소</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Loading Indicator -->
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loading-spinner">
@@ -162,6 +198,6 @@
     </div>
 
     <script src="config.js"></script>
-    <script src="script.js?v=20241220-robust-fallback"></script>
+    <script src="script.js?v=20241220-schedule-confirmation"></script>
 </body>
 </html> 
