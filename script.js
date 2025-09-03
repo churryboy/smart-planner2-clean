@@ -3560,17 +3560,24 @@ function initializeCropBox() {
     const overlay = document.getElementById('cropOverlay');
     const cropBoxElement = document.getElementById('cropBox');
     
-    // Set initial crop box to center 60% of image
-    const boxWidth = canvas.width * 0.6;
-    const boxHeight = canvas.height * 0.6;
+    // Set initial crop box to center 40% of image (smaller to stay within bounds)
+    const boxWidth = Math.min(canvas.width * 0.4, canvas.width - 40);
+    const boxHeight = Math.min(canvas.height * 0.4, canvas.height - 40);
     const boxX = (canvas.width - boxWidth) / 2;
     const boxY = (canvas.height - boxHeight) / 2;
     
-    cropBox = { x: boxX, y: boxY, width: boxWidth, height: boxHeight };
+    // Ensure crop box stays within canvas bounds
+    cropBox = { 
+        x: Math.max(20, Math.min(boxX, canvas.width - boxWidth - 20)), 
+        y: Math.max(20, Math.min(boxY, canvas.height - boxHeight - 20)), 
+        width: boxWidth, 
+        height: boxHeight 
+    };
+    
     updateCropBoxDisplay();
     updateCropDimensions();
     
-    console.log('📦 Crop box initialized:', cropBox);
+    console.log('📦 Crop box initialized within bounds:', cropBox);
 }
 
 // Update crop box visual display
@@ -3582,8 +3589,15 @@ function updateCropBoxDisplay() {
     const offsetX = canvasRect.left - containerRect.left;
     const offsetY = canvasRect.top - containerRect.top;
     
-    cropBoxElement.style.left = (offsetX + cropBox.x) + 'px';
-    cropBoxElement.style.top = (offsetY + cropBox.y) + 'px';
+    // Ensure crop box stays within container bounds
+    const maxX = containerRect.width - cropBox.width;
+    const maxY = containerRect.height - cropBox.height;
+    
+    const displayX = Math.max(0, Math.min(offsetX + cropBox.x, maxX));
+    const displayY = Math.max(0, Math.min(offsetY + cropBox.y, maxY));
+    
+    cropBoxElement.style.left = displayX + 'px';
+    cropBoxElement.style.top = displayY + 'px';
     cropBoxElement.style.width = cropBox.width + 'px';
     cropBoxElement.style.height = cropBox.height + 'px';
 }
