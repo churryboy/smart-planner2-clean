@@ -7,6 +7,51 @@ const https = require('https');
 const app = express();
 const PORT = process.env.PORT || 10000; // Use 10000 for both local and production
 
+// Enforce HTTPS, HSTS, and secure cookies in production
+app.set('trust proxy', 1);
+app.use((req, res, next) => {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const host = req.headers.host || '';
+    const hostname = req.hostname || '';
+    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+    const proto = req.headers['x-forwarded-proto'] || (req.secure ? 'https' : 'http');
+    const isHttps = proto === 'https';
+
+    // Redirect HTTP to HTTPS in production (but never on localhost)
+    if (isProduction && !isHttps && !isLocalhost) {
+        return res.redirect(301, `https://${host}${req.originalUrl}`);
+    }
+
+    // Send HSTS only over HTTPS in production (but never on localhost)
+    if (isProduction && isHttps && !isLocalhost) {
+        res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+    }
+
+    // In production, instruct browsers to upgrade any insecure resource requests (but never on localhost)
+    if (isProduction && !isLocalhost) {
+        res.setHeader('Content-Security-Policy', 'upgrade-insecure-requests');
+    }
+
+    next();
+});
+
+// Ensure any cookies set are Secure/HttpOnly/SameSite in production (but never on localhost)
+app.use((req, res, next) => {
+    const originalCookie = res.cookie.bind(res);
+    res.cookie = (name, value, options = {}) => {
+        const isProduction = process.env.NODE_ENV === 'production';
+        const hostname = req.hostname || '';
+        const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+        if (isProduction && !isLocalhost) {
+            options.secure = true;
+            options.httpOnly = options.httpOnly !== false;
+            if (!options.sameSite) options.sameSite = 'Strict';
+        }
+        return originalCookie(name, value, options);
+    };
+    next();
+});
+
 // CORS configuration for production and development
 const corsOptions = {
     origin: function (origin, callback) {
@@ -99,13 +144,13 @@ const SYSTEM_PROMPT = `당신은 사용자가 자연어로 일정을 입력할 �
 {
     "success": true,
     "event": {
-        "title": "이벤트 제목",
-        "date": "YYYY-MM-DD",
-        "time": "HH:MM",
-        "description": "이벤트 설명",
-        "allDay": false
-    },
-    "message": "일정이 추가되었습니다"
+            "title": "이벤트 제목",
+            "date": "YYYY-MM-DD",
+            "time": "HH:MM",
+            "description": "이벤트 설명",
+            "allDay": false
+        },
+        "message": "일정이 추가되었습니다"
 }
 
 시간이 명시되지 않은 경우 allDay를 true로 설정하고 time을 null로 설정하세요.
@@ -198,7 +243,7 @@ function parseKoreanScheduleText(text) {
     const dotMatches = [...text.matchAll(dotPattern)];
     
     // Pattern 3: Date ranges like "10.27~10.29", "12.8~12.10"
-    const rangePattern = /(\d{1,2})\.(\d{1,2})\s*[~\-]\s*(\d{1,2})\.(\d{1,2})[:\s]*([^\n•]+)/g;
+    const rangePattern = /(\d{1,2})\.(\d{1,2})\s*[~\-]\s*(\d{1,2})\.(\d{1,2})/g;
     const rangeMatches = [...text.matchAll(rangePattern)];
     
     console.log('🔍 Pattern matches found:');

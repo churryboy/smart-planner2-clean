@@ -1861,15 +1861,7 @@ async function callClaudeAPI(userMessage) {
         return data;
     } catch (error) {
         console.error('Backend API error:', error);
-        
-        // For local testing, provide a mock response
-        if (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            console.log('Using mock AI response for local testing');
-            return mockAIResponse(userMessage);
-        }
-        
-        // Fallback: Show message that backend needs to be deployed
-        throw new Error('백엔드 서버가 아직 배포되지 않았습니다. Render에 백엔드를 배포해주세요.');
+        throw error;
     }
 }
 
