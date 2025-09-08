@@ -857,22 +857,24 @@ function initializeCalendar() {
 // Initialize event handlers
 function initializeEventHandlers() {
     // Month navigation
-    document.getElementById('prevMonth').addEventListener('click', () => {
+    const prevBtn = document.getElementById('prevMonth');
+    if (prevBtn) prevBtn.addEventListener('click', () => {
         currentDate.setMonth(currentDate.getMonth() - 1);
         renderCalendar();
         updateMonthDisplay();
     });
 
-    document.getElementById('nextMonth').addEventListener('click', () => {
+    const nextBtn = document.getElementById('nextMonth');
+    if (nextBtn) nextBtn.addEventListener('click', () => {
         currentDate.setMonth(currentDate.getMonth() + 1);
         renderCalendar();
         updateMonthDisplay();
     });
 
-    // Calendar view button
-    document.getElementById('calendarViewBtn').addEventListener('click', () => {
+    // Calendar / Todo view buttons (may not exist in new GNB)
+    const calViewBtn = document.getElementById('calendarViewBtn');
+    if (calViewBtn) calViewBtn.addEventListener('click', () => {
         showCalendarView();
-        // Go to today
         currentDate = new Date();
         selectedDate = new Date();
         renderCalendar();
@@ -880,87 +882,92 @@ function initializeEventHandlers() {
         updateEventList();
     });
 
-    // Todo list view button
-    document.getElementById('todoListViewBtn').addEventListener('click', showTodoListView);
+    const todoListBtn = document.getElementById('todoListViewBtn');
+    if (todoListBtn) todoListBtn.addEventListener('click', showTodoListView);
 
     // AI Input
     const aiInput = document.getElementById('aiInput');
     const aiSendBtn = document.getElementById('aiSendBtn');
-    
+
     console.log('🔧 AI Input elements:', { aiInput: !!aiInput, aiSendBtn: !!aiSendBtn });
 
-    // Auto-resize textarea
-    aiInput.addEventListener('input', () => {
-        aiInput.style.height = 'auto';
-        aiInput.style.height = aiInput.scrollHeight + 'px';
-    });
+    if (aiInput) {
+        // Auto-resize textarea
+        aiInput.addEventListener('input', () => {
+            aiInput.style.height = 'auto';
+            aiInput.style.height = aiInput.scrollHeight + 'px';
+        });
 
-    // Send on Enter (without Shift)
-    aiInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendAIMessage();
-        }
-    });
+        // Send on Enter (without Shift)
+        aiInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendAIMessage();
+            }
+        });
+    }
 
-    aiSendBtn.addEventListener('click', sendAIMessage);
+    if (aiSendBtn) aiSendBtn.addEventListener('click', sendAIMessage);
 
     // Camera button functionality
     const cameraBtn = document.getElementById('cameraBtn');
     const cameraInput = document.getElementById('cameraInput');
-    
-    cameraBtn.addEventListener('click', () => {
-        console.log('📷 Camera button clicked');
-        cameraInput.click(); // Trigger file input
-    });
-    
-    cameraInput.addEventListener('change', handleImageUpload);
+    if (cameraBtn && cameraInput) {
+        cameraBtn.addEventListener('click', () => {
+            console.log('📷 Camera button clicked');
+            cameraInput.click(); // Trigger file input
+        });
+        cameraInput.addEventListener('change', handleImageUpload);
+    }
 
     // Modal close
-    document.getElementById('modalClose').addEventListener('click', closeModal);
-    document.getElementById('eventModal').addEventListener('click', (e) => {
-        if (e.target.id === 'eventModal') {
-            closeModal();
-        }
+    const modalClose = document.getElementById('modalClose');
+    if (modalClose) modalClose.addEventListener('click', closeModal);
+    const eventModalEl = document.getElementById('eventModal');
+    if (eventModalEl) eventModalEl.addEventListener('click', (e) => {
+        if (e.target.id === 'eventModal') closeModal();
     });
 
     // Todo modal close
-    document.getElementById('todoModalClose').addEventListener('click', closeTodoModal);
-    document.getElementById('todoModal').addEventListener('click', (e) => {
-        if (e.target.id === 'todoModal') {
-            closeTodoModal();
-        }
+    const todoClose = document.getElementById('todoModalClose');
+    if (todoClose) todoClose.addEventListener('click', closeTodoModal);
+    const todoModalEl = document.getElementById('todoModal');
+    if (todoModalEl) todoModalEl.addEventListener('click', (e) => {
+        if (e.target.id === 'todoModal') closeTodoModal();
     });
 
     // Schedule confirmation modal
-    document.getElementById('scheduleConfirmClose').addEventListener('click', hideScheduleConfirmation);
-    document.getElementById('scheduleConfirmModal').addEventListener('click', (e) => {
-        if (e.target.id === 'scheduleConfirmModal') {
-            hideScheduleConfirmation();
-        }
+    const schedClose = document.getElementById('scheduleConfirmClose');
+    if (schedClose) schedClose.addEventListener('click', hideScheduleConfirmation);
+    const schedModalEl = document.getElementById('scheduleConfirmModal');
+    if (schedModalEl) schedModalEl.addEventListener('click', (e) => {
+        if (e.target.id === 'scheduleConfirmModal') hideScheduleConfirmation();
     });
 
     // Image crop modal
-    document.getElementById('cropModalClose').addEventListener('click', cancelCrop);
-    document.getElementById('resetCrop').addEventListener('click', resetCropBox);
-    document.getElementById('cancelCrop').addEventListener('click', cancelCrop);
-    document.getElementById('confirmCrop').addEventListener('click', confirmCrop);
-    document.getElementById('imageCropModal').addEventListener('click', (e) => {
-        if (e.target.id === 'imageCropModal') {
-            cancelCrop();
-        }
+    const cropClose = document.getElementById('cropModalClose');
+    if (cropClose) cropClose.addEventListener('click', cancelCrop);
+    const resetCropBtn = document.getElementById('resetCrop');
+    if (resetCropBtn) resetCropBtn.addEventListener('click', resetCropBox);
+    const cancelCropBtn = document.getElementById('cancelCrop');
+    if (cancelCropBtn) cancelCropBtn.addEventListener('click', cancelCrop);
+    const confirmCropBtn = document.getElementById('confirmCrop');
+    if (confirmCropBtn) confirmCropBtn.addEventListener('click', confirmCrop);
+    const cropModalEl = document.getElementById('imageCropModal');
+    if (cropModalEl) cropModalEl.addEventListener('click', (e) => {
+        if (e.target.id === 'imageCropModal') cancelCrop();
     });
-    
+
     // Keyboard shortcuts for closing modals
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-            if (document.getElementById('imageCropModal').classList.contains('active')) {
+            if (document.getElementById('imageCropModal')?.classList.contains('active')) {
                 cancelCrop();
-            } else if (document.getElementById('scheduleConfirmModal').classList.contains('active')) {
+            } else if (document.getElementById('scheduleConfirmModal')?.classList.contains('active')) {
                 hideScheduleConfirmation();
-            } else if (document.getElementById('todoModal').classList.contains('active')) {
+            } else if (document.getElementById('todoModal')?.classList.contains('active')) {
                 closeTodoModal();
-            } else if (document.getElementById('eventModal').classList.contains('active')) {
+            } else if (document.getElementById('eventModal')?.classList.contains('active')) {
                 closeModal();
             }
         }
@@ -4010,6 +4017,8 @@ function initNewFlowControllers() {
         void bottomSheet.offsetHeight;
         bottomSheet.style.opacity = '1';
         bottomSheet.style.transform = 'translateY(0)';
+        document.body.classList.add('chat-open');
+        enableChatBodyScrollCapture();
     }
 
     // Initial view: intro only
@@ -4056,7 +4065,7 @@ function initNewFlowControllers() {
     // Close chat
     bsClose.addEventListener('click', () => {
         bottomSheet.style.display = 'none';
-        document.body.classList.remove('bs-open');
+        document.body.classList.remove('chat-open');
         restoreIntroCard();
         introView.style.display = 'block';
         flowState = { mode: null, presetId: null, outputType: null, messages: [] };
@@ -4091,7 +4100,7 @@ function initNewFlowControllers() {
         `;
         row.querySelector('.bubble').textContent = text;
         bsMessages.appendChild(row);
-        bsMessages.scrollTop = bsMessages.scrollHeight;
+        scrollChatToBottom();
     }
 
     function pushUser(text) {
@@ -4104,7 +4113,7 @@ function initNewFlowControllers() {
         `;
         row.querySelector('.bubble').textContent = text;
         bsMessages.appendChild(row);
-        bsMessages.scrollTop = bsMessages.scrollHeight;
+        scrollChatToBottom();
     }
 
     // IME-safe send handlers
@@ -4276,7 +4285,7 @@ function showTyping() {
         `;
         bsMessages.appendChild(typing);
     }
-    bsMessages.scrollTop = bsMessages.scrollHeight;
+    scrollChatToBottom();
 }
 
 function hideTyping() {
@@ -4295,7 +4304,7 @@ function renderAssistantStreaming(fullText) {
     `;
     const bubble = row.querySelector('.bubble');
     bsMessages.appendChild(row);
-    bsMessages.scrollTop = bsMessages.scrollHeight;
+    scrollChatToBottom();
 
     const chars = Array.from(fullText);
     let i = 0;
@@ -4303,7 +4312,7 @@ function renderAssistantStreaming(fullText) {
         const chunk = chars.slice(i, i + 3).join('');
         bubble.textContent += chunk;
         i += 3;
-        bsMessages.scrollTop = bsMessages.scrollHeight;
+        scrollChatToBottom();
         if (i < chars.length) requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
@@ -4334,4 +4343,21 @@ if (navCal && navChat) {
         document.getElementById('calendarView').style.display = 'none';
         document.getElementById('todoListView').style.display = 'none';
     });
+}
+
+function scrollChatToBottom() {
+    const container = document.querySelector('.bottom-sheet-body');
+    if (container) container.scrollTop = container.scrollHeight;
+}
+
+// After chat shows, ensure body is scrollable and capture wheel/touch
+function enableChatBodyScrollCapture() {
+    const bodyEl = document.querySelector('.bottom-sheet-body');
+    if (!bodyEl) return;
+    bodyEl.addEventListener('wheel', (e) => {
+        e.stopPropagation();
+    }, { passive: true });
+    bodyEl.addEventListener('touchmove', (e) => {
+        e.stopPropagation();
+    }, { passive: true });
 }
