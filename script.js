@@ -4038,6 +4038,15 @@ function initNewFlowControllers() {
         bottomSheet.style.bottom = `${navH + safe}px`;
         bottomSheet.style.height = `${avail}px`;
         bottomSheet.style.maxHeight = `${avail}px`;
+        const bodyEl = bottomSheet.querySelector('.bottom-sheet-body');
+        if (bodyEl) {
+            const headerH = (bottomSheet.querySelector('.bottom-sheet-header')?.offsetHeight || 0);
+            const inputH = (bottomSheet.querySelector('.bottom-sheet-input')?.offsetHeight || 0);
+            const bodyH = Math.max(avail - headerH - inputH, 100);
+            bodyEl.style.height = `${bodyH}px`;
+            bodyEl.style.maxHeight = `${bodyH}px`;
+            bodyEl.style.overflowY = 'auto';
+        }
     }
 
     // Initial view: intro only
@@ -4367,7 +4376,12 @@ if (navCal && navChat) {
 
 function scrollChatToBottom() {
     const container = document.querySelector('.bottom-sheet-body');
-    if (container) container.scrollTop = container.scrollHeight;
+    if (!container) return;
+    const attempt = () => {
+        container.scrollTop = container.scrollHeight;
+    };
+    requestAnimationFrame(attempt);
+    setTimeout(attempt, 50);
 }
 
 // After chat shows, ensure body is scrollable and capture wheel/touch
