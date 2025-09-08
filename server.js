@@ -54,6 +54,7 @@ app.use(express.static(path.join(__dirname)));
 
 // Claude API configuration
 const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const CLAUDE_API_ENDPOINT = 'https://api.anthropic.com/v1/messages';
 
 // Check if API key is configured
@@ -190,6 +191,52 @@ async function makeClaudeRequest(requestData) {
     });
 
     return claudeResponse;
+}
+
+// OpenAI Chat Completions request helper
+async function makeOpenAIChatRequest({ system, messages }) {
+    const options = {
+        hostname: 'api.openai.com',
+        port: 443,
+        path: '/v1/chat/completions',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENAI_API_KEY}`
+        }
+    };
+
+    const body = JSON.stringify({
+        model: 'gpt-4o-mini',
+        temperature: 0.6,
+        messages: [
+            { role: 'system', content: system },
+            ...messages
+        ]
+    });
+
+    return await new Promise((resolve, reject) => {
+        const req = https.request(options, (res) => {
+            let data = '';
+            res.on('data', (chunk) => data += chunk);
+            res.on('end', () => {
+                if (res.statusCode >= 200 && res.statusCode < 300) {
+                    try {
+                        const parsed = JSON.parse(data);
+                        const text = parsed.choices?.[0]?.message?.content || '';
+                        resolve({ text });
+                    } catch (e) {
+                        reject(new Error('Invalid OpenAI JSON response'));
+                    }
+                } else {
+                    reject(new Error(`OpenAI API error: ${res.statusCode} - ${data}`));
+                }
+            });
+        });
+        req.on('error', reject);
+        req.write(body);
+        req.end();
+    });
 }
 
 // Parse Korean schedule text into JSON format (Enhanced)
@@ -329,6 +376,45 @@ app.post('/api/claude-chat', async (req, res) => {
     } catch (error) {
         console.error('Claude Chat API error:', error);
         res.status(500).json({ error: 'Failed to get chat response', details: error.message });
+    }
+});
+
+// Unified chat endpoint: prefers OpenAI when provided, falls back to Claude
+app.post('/api/chat', async (req, res) => {
+    try {
+        const { message, preset, history, provider } = req.body || {};
+        if (!message) return res.status(400).json({ error: 'Message is required' });
+
+        // Build system and messages
+        let system = CHAT_SYSTEM_PROMPT;
+        if (preset) system += `\nTopic preset: ${preset}`;
+        const chatMessages = Array.isArray(history) ? history.map(m => ({
+            role: m.role === 'assistant' ? 'assistant' : 'user',
+            content: m.text
+        })) : [];
+        chatMessages.push({ role: 'user', content: message });
+
+        // Provider selection
+        const wantOpenAI = provider === 'openai' || (!provider && OPENAI_API_KEY);
+        if (wantOpenAI && OPENAI_API_KEY) {
+            const resp = await makeOpenAIChatRequest({ system, messages: chatMessages });
+            return res.json({ success: true, text: resp.text });
+        }
+
+        if (!CLAUDE_API_KEY) return res.status(500).json({ error: 'No chat provider configured' });
+
+        const requestData = JSON.stringify({
+            model: 'claude-3-5-sonnet-20241022',
+            max_tokens: 800,
+            system,
+            messages: chatMessages
+        });
+        const claudeResponse = await makeClaudeRequest(requestData);
+        const responseContent = claudeResponse.content?.[0]?.text || '';
+        return res.json({ success: true, text: responseContent });
+    } catch (error) {
+        console.error('Chat API error:', error);
+        return res.status(500).json({ error: 'Failed to get chat response', details: error.message });
     }
 });
 

@@ -4208,8 +4208,8 @@ function getSeedPromptForPreset(presetId) {
 
 async function callClaudeChat({ message, presetId, history }) {
     const apiUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:')
-        ? 'http://localhost:10000/api/claude-chat'
-        : 'https://smart-planner2-clean.onrender.com/api/claude-chat';
+        ? 'http://localhost:10000/api/chat'
+        : 'https://smart-planner2-clean.onrender.com/api/chat';
     const resp = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
