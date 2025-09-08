@@ -3980,7 +3980,11 @@ function initNewFlowControllers() {
             flowState.presetId = presetId;
             // Open bottom sheet without full page switch; hide intro via body class
             document.body.classList.add('bs-open');
-            introView.style.display = 'none';
+            introView.style.display = 'block';
+            // Insert chat container right after introView
+            if (introView.nextElementSibling !== bottomSheet) {
+                introView.parentNode.insertBefore(bottomSheet, introView.nextSibling);
+            }
             bottomSheet.style.display = 'block';
             bsMessages.innerHTML = '';
             flowState.messages = [];

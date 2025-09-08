@@ -1209,7 +1209,7 @@ body.crop-modal-open {
 .home-btn.task { border-left: 4px solid #4CAF50; }
 .home-btn:hover { background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
 
-body.bs-open .intro-view { display: none; }
+body.bs-open .intro-view { display: block; }
 
 /* Bottom Sheet → In-page Chat Container */
 .bottom-sheet { position: relative; background: white; border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); z-index: auto; max-width: 500px; margin: 16px auto; transform: none; }
