@@ -4369,25 +4369,25 @@ if (navCal && navChat) {
         document.getElementById('todoListView').style.display = 'none';
         document.getElementById('introView').style.display = 'none';
         const bs = document.getElementById('bottomSheet');
-        if (bs) bs.style.display = 'none';
+        if (bs) {
+            chatWasOpen = bs.style.display === 'block' || bs.dataset.open === 'true';
+            bs.dataset.open = chatWasOpen ? 'true' : 'false';
+            bs.style.display = 'none';
+        }
         document.body.classList.remove('chat-open');
         window.removeEventListener('resize', layoutChatPanel);
         resizeBound = false;
         showCalendarView();
     });
-    navChat.addEventListener('click', () => {
-        navChat.classList.add('active');
-        navCal.classList.remove('active');
-        // show chat container
-        document.getElementById('calendarView').style.display = 'none';
-        document.getElementById('todoListView').style.display = 'none';
-        document.getElementById('introView').style.display = 'block';
-        const bs = document.getElementById('bottomSheet');
-        const shouldReopen = chatWasOpen || bs?.dataset.open === 'true' || (flowState.messages && flowState.messages.length > 0);
-        if (shouldReopen) {
+            navChat.addEventListener('click', () => {
+            navChat.classList.add('active');
+            navCal.classList.remove('active');
+            // show chat container
+            document.getElementById('calendarView').style.display = 'none';
+            document.getElementById('todoListView').style.display = 'none';
+            document.getElementById('introView').style.display = 'block';
             slideInChat();
-        }
-    });
+        });
 }
 
 function scrollChatToBottom() {
