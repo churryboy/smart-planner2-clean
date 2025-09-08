@@ -3952,8 +3952,7 @@ function initNewFlowControllers() {
     const bsInput = document.getElementById('bsInput');
     const bsSend = document.getElementById('bsSend');
     const bsClose = document.getElementById('bsClose');
-    const outputPref = document.getElementById('outputPref');
-    const prefConfirm = document.getElementById('prefConfirm');
+    // Removed output preference UI
 
     // Helper: fold intro card
         function collapseIntroCard(selectedText) {
@@ -4049,8 +4048,7 @@ function initNewFlowControllers() {
             setTimeout(() => {
                 slideInChat();
                 bsTitle.textContent = '목표 설정 대화';
-                pushAssistant("어떤 목표를 달성하고 싶나요? 기간과 중요도를 알려주세요. 제가 단계별로 도와드릴게요.");
-                outputPref.style.display = 'block';
+                pushAssistant(getSeedPromptForPreset(presetId));
             }, 120);
         });
     }
@@ -4064,15 +4062,7 @@ function initNewFlowControllers() {
         flowState = { mode: null, presetId: null, outputType: null, messages: [] };
     });
 
-    prefConfirm.addEventListener('click', () => {
-        const selected = document.querySelector('input[name="pref"]:checked');
-        if (!selected) {
-            pushAssistant('출력 형식을 선택해주세요: 캘린더, 할일, 혹은 둘 다.');
-            return;
-        }
-        flowState.outputType = selected.value; // calendar|todo|both
-        pushAssistant(`출력 형식: ${selected.value}로 진행합니다.`);
-    });
+    // Removed: output preference confirm handler
 
     async function handleLLMTurn() {
         // Build prompt per mode
@@ -4148,13 +4138,7 @@ function initNewFlowControllers() {
         }
     });
 
-    // Hook confirm to proceed
-    document.addEventListener('click', (e) => {
-        if (e.target && e.target.id === 'prefConfirm') {
-            if (!flowState.outputType) return; // require selection
-            proceedAfterConfirm();
-        }
-    });
+    // Removed: confirm to proceed handler
 }
 
 // Working view helpers
@@ -4207,15 +4191,7 @@ function proceedAfterConfirm() {
     }, 600);
 }
 
-// Hook confirm to proceed
-(function hookConfirmToProceed(){
-    document.addEventListener('click', (e) => {
-        if (e.target && e.target.id === 'prefConfirm') {
-            if (!flowState.outputType) return; // require selection
-            proceedAfterConfirm();
-        }
-    });
-})();
+// Removed: confirm to proceed hook
 
 // Initialize controllers after DOM ready
 (function waitDom(){
@@ -4225,3 +4201,22 @@ function proceedAfterConfirm() {
         initNewFlowControllers();
     }
 })();
+
+function getSeedPromptForPreset(presetId) {
+    switch (presetId) {
+        case 'goal_general':
+            return '안녕하세요! 어떤 대학교에 입학하고 싶으신가요? 목표 전형(수시/정시)과 희망 학과도 알려주세요.';
+        case 'goal_study':
+            return '안녕하세요! 수능에서 올리고 싶은 과목과 목표 등급이 무엇인가요? 주간/일간 학습 계획을 함께 세워볼게요.';
+        case 'goal_habit':
+            return '안녕하세요! 내신에서 올리고 싶은 과목과 현재 등급은 어느 정도인가요? 시험까지 남은 기간도 알려주세요.';
+        case 'task_event':
+            return '수행평가 준비를 도와드릴게요. 과목, 평가 유형(발표/보고서/실험 등), 제출일을 알려주세요.';
+        case 'task_todo':
+            return '생기부 관리 항목을 도와드릴게요. 현재 활동(동아리/봉사/진로/독서)과 보완하고 싶은 영역이 있나요?';
+        case 'task_academy_homework':
+            return '학원 숙제 관리 도와드릴게요. 어떤 과목 숙제인지와 마감일을 알려주시면 주간/일간 계획으로 정리해 드릴게요.';
+        default:
+            return '어떤 목표를 달성하고 싶으신가요? 기간과 중요도를 알려주세요.';
+    }
+}
