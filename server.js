@@ -134,6 +134,14 @@ const SYSTEM_PROMPT = `당신은 사용자가 자연어로 일정을 입력할 �
 
 중요: 반드시 유효한 JSON 형식으로만 응답하세요.`;
 
+// Counselor chat system prompt
+const CHAT_SYSTEM_PROMPT = `You are a school counsellor. Your job is not to take the order, but to consult the user and generate a personalized output.
+Use a warm, thoughtful tone of voice with light humor and encouragement.
+Ask at least 5 questions to learn about the user. Ensure the final output will include at least 2 specific, personal elements gathered from the conversation (e.g., subject strengths, schedule constraints, preferred study style).
+Keep conversations concise and in natural Korean.
+When you feel you have enough information, ask the closing question exactly as:
+"지금까지 얘기나눈 것을 바탕으로 구체적인 플래너를 만들어주려고 하는데 괜찮을까요^^?"`;
+
 // Shared function to make Claude API requests
 async function makeClaudeRequest(requestData) {
     const options = {
@@ -280,6 +288,47 @@ function parseKoreanScheduleText(text) {
     
     return null;
 }
+
+// Free-form chat endpoint (counsellor tone)
+app.post('/api/claude-chat', async (req, res) => {
+    try {
+        if (!CLAUDE_API_KEY) {
+            return res.status(500).json({ error: 'Claude API key not configured. Please set CLAUDE_API_KEY environment variable.' });
+        }
+        const { message, preset, history } = req.body || {};
+        if (!message) {
+            return res.status(400).json({ error: 'Message is required' });
+        }
+        // Build messages array with optional history
+        const chatMessages = [];
+        // Optional topic hint
+        let system = CHAT_SYSTEM_PROMPT;
+        if (preset) {
+            system += `\nTopic preset: ${preset}`;
+        }
+        if (Array.isArray(history)) {
+            history.forEach(m => {
+                const role = m.role === 'assistant' ? 'assistant' : 'user';
+                chatMessages.push({ role, content: m.text });
+            });
+        }
+        chatMessages.push({ role: 'user', content: message });
+
+        const requestData = JSON.stringify({
+            model: 'claude-3-5-sonnet-20241022',
+            max_tokens: 800,
+            system,
+            messages: chatMessages
+        });
+
+        const claudeResponse = await makeClaudeRequest(requestData);
+        const responseContent = claudeResponse.content?.[0]?.text || '';
+        res.json({ success: true, text: responseContent });
+    } catch (error) {
+        console.error('Claude Chat API error:', error);
+        res.status(500).json({ error: 'Failed to get chat response', details: error.message });
+    }
+});
 
 // API endpoint for Claude with image (OCR)
 app.post('/api/claude-vision', async (req, res) => {

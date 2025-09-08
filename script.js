@@ -1832,7 +1832,7 @@ async function callClaudeAPIWithImage(userMessage, base64Image) {
 }
 
 // Call Claude API through our Render backend
-async function callClaudeAPI(userMessage) {
+async function callClaudeAPI(userMessage, { presetId } = {}) {
     // Use local backend for development, Render backend for production
         // Always use Render backend - no more Vercel CORS issues!
     const apiUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:')
@@ -4067,35 +4067,14 @@ function initNewFlowControllers() {
     async function handleLLMTurn() {
         // Build prompt per mode
         const latest = flowState.messages[flowState.messages.length - 1]?.text || '';
-        let prompt = latest;
-        if (flowState.mode === 'goal') {
-            prompt = `당신은 코치입니다. 아래 사용자의 목표를 단계별로 구체화하고 필요한 일정/할일을 제안하세요. 대화는 간결한 한국어로 진행.
-사용자: ${latest}`;
-        } else if (flowState.mode === 'task') {
-            // No guiding style; direct interpretation
-            prompt = latest;
-        }
         try {
-            const ai = await callClaudeAPI(prompt);
-            // For this flow, ai may yield event or plain text
-            if (ai && ai.success && (ai.event || ai.events)) {
-                // Apply to calendar immediately, then guide to output step
-                if (ai.event) {
-                    const newEvent = { id: generateId(), ...ai.event };
-                    events.push(newEvent);
-                }
-                if (ai.events && Array.isArray(ai.events)) {
-                    ai.events.forEach(ev => events.push({ id: generateId(), ...ev }));
-                }
-                saveEvents();
-                renderCalendar();
-                pushAssistant('일정을 생성했습니다. 출력 형식을 확인 후 계속 진행하세요.');
-            } else if (ai && ai.success === false && ai.error) {
-                pushAssistant(`오류: ${ai.error}`);
-            } else {
-                // Fallback: echo
-                pushAssistant('내용을 반영했습니다. 출력 형식을 선택 후 확인을 눌러주세요.');
-            }
+            const chatRes = await callClaudeChat({
+                message: latest,
+                presetId: flowState.presetId,
+                history: flowState.messages
+            });
+            const text = chatRes?.text || '';
+            if (text) pushAssistant(text);
         } catch (e) {
             pushAssistant('서버와 통신 중 오류가 발생했습니다.');
         }
@@ -4219,4 +4198,17 @@ function getSeedPromptForPreset(presetId) {
         default:
             return '어떤 목표를 달성하고 싶으신가요? 기간과 중요도를 알려주세요.';
     }
+}
+
+async function callClaudeChat({ message, presetId, history }) {
+    const apiUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:')
+        ? 'http://localhost:10000/api/claude-chat'
+        : 'https://smart-planner2-clean.onrender.com/api/claude-chat';
+    const resp = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, preset: presetId, history })
+    });
+    if (!resp.ok) throw new Error('chat API failed');
+    return await resp.json();
 }
