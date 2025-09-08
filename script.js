@@ -4048,7 +4048,7 @@ function initNewFlowControllers() {
             setTimeout(() => {
                 slideInChat();
                 bsTitle.textContent = '목표 설정 대화';
-                pushAssistant(getSeedPromptForPreset(presetId));
+                pushAssistant(getIntroLineForPreset(presetId));
             }, 120);
         });
     }
@@ -4217,4 +4217,24 @@ async function callClaudeChat({ message, presetId, history }) {
     });
     if (!resp.ok) throw new Error('chat API failed');
     return await resp.json();
+}
+
+function getIntroLineForPreset(presetId) {
+    const intro = '안녕하세요, 학교 진로/학습 상담 선생님입니다. '; // intro then one question only
+    switch (presetId) {
+        case 'goal_general':
+            return intro + '어느 대학교를 목표로 하고 계신가요?';
+        case 'goal_study':
+            return intro + '수능에서 가장 먼저 올리고 싶은 과목이 무엇인가요?';
+        case 'goal_habit':
+            return intro + '내신에서 가장 보완하고 싶은 과목이 무엇인가요?';
+        case 'task_event':
+            return intro + '어떤 과목의 수행평가를 준비 중이신가요?';
+        case 'task_todo':
+            return intro + '생기부에서 가장 강화하고 싶은 활동 영역이 무엇인가요?';
+        case 'task_academy_homework':
+            return intro + '오늘 처리해야 할 학원 숙제는 어떤 과목인가요?';
+        default:
+            return intro + '가장 먼저 이루고 싶은 목표가 무엇인가요?';
+    }
 }
