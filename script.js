@@ -4234,7 +4234,7 @@ async function callClaudeChat({ message, presetId, history }) {
 }
 
 function getIntroLineForPreset(presetId) {
-    const intro = '안녕하세요, 학교 진로/학습 상담 선생님입니다. '; // intro then one question only
+    const intro = '안녕하세요! 우리 함께 목표를 달성하기 위한 플래너를 만들어보아요! '; // intro then one question only
     switch (presetId) {
         case 'goal_general':
             return intro + '어느 대학교를 목표로 하고 계신가요?';
