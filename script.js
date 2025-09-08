@@ -5,6 +5,8 @@ let events = [];
 let todos = [];
 let currentEventForTodos = null;
 let preventTodoModalReopen = false;
+let chatWasOpen = false;
+let resizeBound = false;
 
 // Korean month names
 const monthNames = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
@@ -4020,7 +4022,12 @@ function initNewFlowControllers() {
         document.body.classList.add('chat-open');
         enableChatBodyScrollCapture();
         layoutChatPanel();
-        window.addEventListener('resize', layoutChatPanel);
+        if (!resizeBound) {
+            window.addEventListener('resize', layoutChatPanel);
+            resizeBound = true;
+        }
+        bottomSheet.dataset.open = 'true';
+        chatWasOpen = true;
     }
 
     function layoutChatPanel() {
@@ -4095,9 +4102,12 @@ function initNewFlowControllers() {
         bottomSheet.style.display = 'none';
         document.body.classList.remove('chat-open');
         window.removeEventListener('resize', layoutChatPanel);
+        resizeBound = false;
         restoreIntroCard();
         introView.style.display = 'block';
         flowState = { mode: null, presetId: null, outputType: null, messages: [] };
+        bottomSheet.dataset.open = 'false';
+        chatWasOpen = false;
     });
 
     // Removed: output preference confirm handler
@@ -4358,19 +4368,25 @@ if (navCal && navChat) {
         document.getElementById('calendarView').style.display = 'block';
         document.getElementById('todoListView').style.display = 'none';
         document.getElementById('introView').style.display = 'none';
-        document.getElementById('bottomSheet').style.display = 'none';
+        const bs = document.getElementById('bottomSheet');
+        if (bs) bs.style.display = 'none';
+        document.body.classList.remove('chat-open');
+        window.removeEventListener('resize', layoutChatPanel);
+        resizeBound = false;
         showCalendarView();
     });
     navChat.addEventListener('click', () => {
         navChat.classList.add('active');
         navCal.classList.remove('active');
         // show chat container
-        document.getElementById('introView').style.display = 'block';
-        if (document.getElementById('bottomSheet').style.display !== 'block') {
-            // keep intro visible to choose or continue chat
-        }
         document.getElementById('calendarView').style.display = 'none';
         document.getElementById('todoListView').style.display = 'none';
+        document.getElementById('introView').style.display = 'block';
+        const bs = document.getElementById('bottomSheet');
+        const shouldReopen = chatWasOpen || bs?.dataset.open === 'true' || (flowState.messages && flowState.messages.length > 0);
+        if (shouldReopen) {
+            slideInChat();
+        }
     });
 }
 
