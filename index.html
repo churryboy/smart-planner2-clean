@@ -34,8 +34,12 @@
         <!-- Intro View: First interaction - choose mode via buttons -->
         <div id="introView" class="intro-view" style="display: block;">
             <div class="intro-card">
-                <h2 class="intro-title">무엇을 도와드릴까요?</h2>
-                <p class="intro-sub">원하는 작업 유형을 선택하세요</p>
+                <div class="intro-head">
+                    <h2 class="intro-title">무슨 목표를 달성하고 싶으세요?</h2>
+                    <span id="introSelected" class="intro-selected" style="display:none"></span>
+                </div>
+                <p class="intro-sub">원하는 목표를 선택하세요</p>
+                <div id="introBody" class="intro-body">
                 <div class="button-grid" id="startButtons">
                     <!-- Goal-tagged buttons -->
                     <button class="home-btn goal" data-mode="goal" data-id="goal_general">🎯 원하는 대학교 입학하기</button>
@@ -45,6 +49,7 @@
                     <button class="home-btn task" data-mode="task" data-id="task_event">📝 수행평가 점수 잘 받기</button>
                     <button class="home-btn task" data-mode="task" data-id="task_todo">🗂️ 생기부 관리하기</button>
                     <button class="home-btn task" data-mode="task" data-id="task_academy_homework">📘 학원 숙제 챙기기</button>
+                </div>
                 </div>
             </div>
         </div>

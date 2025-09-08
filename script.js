@@ -3956,29 +3956,36 @@ function initNewFlowControllers() {
     const prefConfirm = document.getElementById('prefConfirm');
 
     // Helper: fold intro card
-    function collapseIntroCard() {
-        const introCard = document.querySelector('.intro-card');
-        if (!introCard) return;
-        const fullHeight = introCard.scrollHeight;
-        introCard.style.height = fullHeight + 'px';
-        introCard.style.overflow = 'hidden';
-        introCard.style.transition = 'height 300ms ease, opacity 250ms ease, margin 300ms ease';
+    function collapseIntroCard(selectedText) {
+        const introBody = document.getElementById('introBody');
+        const selected = document.getElementById('introSelected');
+        if (selected) {
+            selected.textContent = `— ${selectedText}`;
+            selected.style.display = 'inline';
+        }
+        if (!introBody) return;
+        const fullHeight = introBody.scrollHeight;
+        introBody.style.height = fullHeight + 'px';
         // force reflow
-        void introCard.offsetHeight;
-        introCard.style.opacity = '0';
-        introCard.style.marginBottom = '0px';
-        introCard.style.height = '0px';
+        void introBody.offsetHeight;
+        introBody.style.opacity = '0';
+        introBody.style.marginTop = '0px';
+        introBody.style.height = '0px';
     }
 
     // Helper: restore intro card (no animation required)
     function restoreIntroCard() {
-        const introCard = document.querySelector('.intro-card');
-        if (!introCard) return;
-        introCard.style.transition = '';
-        introCard.style.height = '';
-        introCard.style.opacity = '';
-        introCard.style.marginBottom = '';
-        introCard.style.overflow = '';
+        const introBody = document.getElementById('introBody');
+        const selected = document.getElementById('introSelected');
+        if (selected) {
+            selected.style.display = 'none';
+            selected.textContent = '';
+        }
+        if (!introBody) return;
+        introBody.style.transition = '';
+        introBody.style.height = '';
+        introBody.style.opacity = '';
+        introBody.style.marginTop = '';
     }
 
     // Helper: slide chat container in
@@ -4030,7 +4037,8 @@ function initNewFlowControllers() {
 
             if (mode === 'goal') {
                 // Fold intro and slide-in chat
-                collapseIntroCard();
+                const label = btn.textContent.trim();
+                collapseIntroCard(label);
                 setTimeout(() => {
                     slideInChat();
                     bsTitle.textContent = '목표 설정 대화';

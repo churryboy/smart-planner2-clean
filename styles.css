@@ -1237,3 +1237,7 @@ body.bs-open .intro-view { display: block; }
 .working-card { background: #0b1020; color: #cfe3ff; border-radius: 12px; padding: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
 .working-header { display: flex; align-items: center; gap: 8px; color: #7fb0ff; font-weight: 700; margin-bottom: 8px; }
 .working-log { background: #0b1020; color: #b8d1ff; padding: 10px; border-radius: 8px; max-height: 220px; overflow: auto; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.85rem; } 
+
+.intro-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.intro-selected { color: #FF5500; font-weight: 700; font-size: 1rem; }
+.intro-body { overflow: hidden; transition: height 300ms ease, opacity 250ms ease, margin 300ms ease; } 
