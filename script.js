@@ -4019,6 +4019,25 @@ function initNewFlowControllers() {
         bottomSheet.style.transform = 'translateY(0)';
         document.body.classList.add('chat-open');
         enableChatBodyScrollCapture();
+        layoutChatPanel();
+        window.addEventListener('resize', layoutChatPanel);
+    }
+
+    function layoutChatPanel() {
+        if (!bottomSheet) return;
+        const introCard = document.querySelector('.intro-card');
+        const nav = document.querySelector('.bottom-nav');
+        const topOffset = Math.max((introCard?.getBoundingClientRect().bottom || 0) + 12, 0);
+        const navH = nav ? nav.offsetHeight : 0;
+        const safe = 0; // rely on CSS for extra padding
+        const avail = Math.max(window.innerHeight - navH - safe - topOffset - 12, 200);
+        bottomSheet.style.position = 'fixed';
+        bottomSheet.style.left = '0';
+        bottomSheet.style.right = '0';
+        bottomSheet.style.top = `${topOffset}px`;
+        bottomSheet.style.bottom = `${navH + safe}px`;
+        bottomSheet.style.height = `${avail}px`;
+        bottomSheet.style.maxHeight = `${avail}px`;
     }
 
     // Initial view: intro only
@@ -4066,6 +4085,7 @@ function initNewFlowControllers() {
     bsClose.addEventListener('click', () => {
         bottomSheet.style.display = 'none';
         document.body.classList.remove('chat-open');
+        window.removeEventListener('resize', layoutChatPanel);
         restoreIntroCard();
         introView.style.display = 'block';
         flowState = { mode: null, presetId: null, outputType: null, messages: [] };
