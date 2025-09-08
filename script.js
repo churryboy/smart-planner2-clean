@@ -4108,7 +4108,14 @@ function initNewFlowControllers() {
         if (!text) return;
         pushUser(text);
         bsInput.value = '';
+        bsInput.disabled = true;
+        (document.getElementById('bsSend')||{}).disabled = true;
+        showTyping();
         await handleLLMTurn();
+        hideTyping();
+        bsInput.disabled = false;
+        (document.getElementById('bsSend')||{}).disabled = false;
+        bsInput.focus();
     });
 
     bsInput.addEventListener('keydown', async (e) => {
@@ -4119,7 +4126,14 @@ function initNewFlowControllers() {
             if (!text) return;
             pushUser(text);
             bsInput.value = '';
+            bsInput.disabled = true;
+            (document.getElementById('bsSend')||{}).disabled = true;
+            showTyping();
             await handleLLMTurn();
+            hideTyping();
+            bsInput.disabled = false;
+            (document.getElementById('bsSend')||{}).disabled = false;
+            bsInput.focus();
         }
     });
 
@@ -4237,4 +4251,24 @@ function getIntroLineForPreset(presetId) {
         default:
             return intro + '가장 먼저 이루고 싶은 목표가 무엇인가요?';
     }
+}
+
+function showTyping() {
+    const bsMessages = document.getElementById('bsMessages');
+    if (!bsMessages) return;
+    let typing = document.getElementById('typingIndicator');
+    if (!typing) {
+        typing = document.createElement('div');
+        typing.id = 'typingIndicator';
+        typing.className = 'msg assistant';
+        typing.style.opacity = '0.7';
+        typing.textContent = '상담 선생님이 답변을 준비하고 있어요…';
+        bsMessages.appendChild(typing);
+    }
+    bsMessages.scrollTop = bsMessages.scrollHeight;
+}
+
+function hideTyping() {
+    const typing = document.getElementById('typingIndicator');
+    if (typing) typing.remove();
 }
