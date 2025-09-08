@@ -4379,15 +4379,7 @@ function renderAssistantStreaming(fullText) {
             document.getElementById('calendarView').style.display = 'block';
             document.getElementById('todoListView').style.display = 'none';
             document.getElementById('introView').style.display = 'none';
-            const bs = document.getElementById('bottomSheet');
-            if (bs) {
-                chatWasOpen = bs.style.display === 'block' || bs.dataset.open === 'true';
-                bs.dataset.open = chatWasOpen ? 'true' : 'false';
-                bs.style.display = 'none';
-            }
-            document.body.classList.remove('chat-open');
-            window.removeEventListener('resize', layoutChatPanel);
-            resizeBound = false;
+            window.chat.close(true);
             showCalendarView();
         });
         navChat.addEventListener('click', () => {
@@ -4396,7 +4388,7 @@ function renderAssistantStreaming(fullText) {
             document.getElementById('calendarView').style.display = 'none';
             document.getElementById('todoListView').style.display = 'none';
             document.getElementById('introView').style.display = 'block';
-            slideInChat();
+            window.chat.open();
         });
     }
 })();
@@ -4422,3 +4414,35 @@ function enableChatBodyScrollCapture() {
         e.stopPropagation();
     }, { passive: true });
 }
+
+// ChatController encapsulation
+(function exposeChatController(){
+    const controller = {
+        open(){
+            try { slideInChat(); } catch(e) { console.warn('slideInChat unavailable yet'); }
+        },
+        close(preserve){
+            const bs = document.getElementById('bottomSheet');
+            if (!bs) return;
+            if (preserve) {
+                chatWasOpen = true;
+                bs.dataset.open = 'true';
+            } else {
+                chatWasOpen = false;
+                bs.dataset.open = 'false';
+            }
+            bs.style.display = 'none';
+            document.body.classList.remove('chat-open');
+            try { window.removeEventListener('resize', layoutChatPanel); } catch{}
+            resizeBound = false;
+        },
+        layout(){
+            try { layoutChatPanel(); } catch(e) { console.warn('layoutChatPanel unavailable yet'); }
+        },
+        isOpen(){
+            const bs = document.getElementById('bottomSheet');
+            return !!bs && bs.style.display === 'block';
+        }
+    };
+    window.chat = controller;
+})();
