@@ -4389,6 +4389,8 @@ function renderAssistantStreaming(fullText) {
             document.getElementById('calendarView').style.display = 'none';
             document.getElementById('todoListView').style.display = 'none';
             document.getElementById('introView').style.display = 'block';
+            const elc = document.querySelector('.event-list-container');
+            if (elc) elc.style.display = 'none';
             window.chat.open();
         });
     }
