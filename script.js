@@ -1397,6 +1397,8 @@ function showCalendarView() {
     document.getElementById('todoListView').style.display = 'none';
     document.getElementById('calendarViewBtn').classList.add('active');
     document.getElementById('todoListViewBtn').classList.remove('active');
+    const elc = document.querySelector('.event-list-container');
+    if (elc) elc.style.display = 'block';
 }
 
 // Show todo list view
@@ -3962,9 +3964,9 @@ function initNewFlowControllers() {
     if (todoV) todoV.style.display = 'none';
     if (introView) introView.style.display = 'block';
 
-    // Ensure event list is visible initially
+    // Hide event list initially
     const elc = document.querySelector('.event-list-container');
-    if (elc) elc.style.display = 'block';
+    if (elc) elc.style.display = 'none';
 
     // Start buttons
     const startButtons = document.getElementById('startButtons');
