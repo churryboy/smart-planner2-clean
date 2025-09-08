@@ -1205,8 +1205,8 @@ body.crop-modal-open {
 .intro-sub { color: #666; font-size: 0.9rem; margin-bottom: 16px; }
 .button-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
 .home-btn { padding: 12px; border: 1px solid #eee; border-radius: 12px; background: #f8f9fa; cursor: pointer; font-weight: 600; transition: 0.2s; }
-.home-btn.goal { border-left: 4px solid #FF5500; }
-.home-btn.task { border-left: 4px solid #4CAF50; }
+.home-btn.goal { border-left: 0; }
+.home-btn.task { border-left: 0; }
 .home-btn:hover { background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
 
 body.bs-open .intro-view { display: block; }
