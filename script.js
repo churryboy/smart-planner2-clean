@@ -4074,7 +4074,7 @@ function initNewFlowControllers() {
                 history: flowState.messages
             });
             const text = chatRes?.text || '';
-            if (text) pushAssistant(text);
+            if (text) renderAssistantStreaming(text);
         } catch (e) {
             pushAssistant('서버와 통신 중 오류가 발생했습니다.');
         }
@@ -4082,19 +4082,28 @@ function initNewFlowControllers() {
 
     function pushAssistant(text) {
         flowState.messages.push({ role: 'assistant', text });
-        const div = document.createElement('div');
-        div.className = 'msg assistant';
-        div.textContent = text;
-        bsMessages.appendChild(div);
+        const bsMessages = document.getElementById('bsMessages');
+        const row = document.createElement('div');
+        row.className = 'msg-row assistant';
+        row.innerHTML = `
+            <div class="avatar"><img src="https://i.imgur.com/0QZC3dX.png" alt="assistant"/></div>
+            <div class="bubble assistant"></div>
+        `;
+        row.querySelector('.bubble').textContent = text;
+        bsMessages.appendChild(row);
         bsMessages.scrollTop = bsMessages.scrollHeight;
     }
 
     function pushUser(text) {
         flowState.messages.push({ role: 'user', text });
-        const div = document.createElement('div');
-        div.className = 'msg user';
-        div.textContent = text;
-        bsMessages.appendChild(div);
+        const bsMessages = document.getElementById('bsMessages');
+        const row = document.createElement('div');
+        row.className = 'msg-row user';
+        row.innerHTML = `
+            <div class="bubble user"></div>
+        `;
+        row.querySelector('.bubble').textContent = text;
+        bsMessages.appendChild(row);
         bsMessages.scrollTop = bsMessages.scrollHeight;
     }
 
@@ -4260,9 +4269,11 @@ function showTyping() {
     if (!typing) {
         typing = document.createElement('div');
         typing.id = 'typingIndicator';
-        typing.className = 'msg assistant';
-        typing.style.opacity = '0.7';
-        typing.textContent = '상담 선생님이 답변을 준비하고 있어요…';
+        typing.className = 'msg-row assistant';
+        typing.innerHTML = `
+            <div class="avatar"><img src="https://i.imgur.com/0QZC3dX.png" alt="assistant"/></div>
+            <div class="bubble assistant" style="opacity:.7">답변을 준비하고 있어요…</div>
+        `;
         bsMessages.appendChild(typing);
     }
     bsMessages.scrollTop = bsMessages.scrollHeight;
@@ -4271,4 +4282,56 @@ function showTyping() {
 function hideTyping() {
     const typing = document.getElementById('typingIndicator');
     if (typing) typing.remove();
+}
+
+function renderAssistantStreaming(fullText) {
+    const bsMessages = document.getElementById('bsMessages');
+    if (!bsMessages) return pushAssistant(fullText);
+    const row = document.createElement('div');
+    row.className = 'msg-row assistant';
+    row.innerHTML = `
+        <div class="avatar"><img src="https://i.imgur.com/0QZC3dX.png" alt="assistant"/></div>
+        <div class="bubble assistant"></div>
+    `;
+    const bubble = row.querySelector('.bubble');
+    bsMessages.appendChild(row);
+    bsMessages.scrollTop = bsMessages.scrollHeight;
+
+    const chars = Array.from(fullText);
+    let i = 0;
+    const tick = () => {
+        const chunk = chars.slice(i, i + 3).join('');
+        bubble.textContent += chunk;
+        i += 3;
+        bsMessages.scrollTop = bsMessages.scrollHeight;
+        if (i < chars.length) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+}
+
+// Bottom nav wiring
+const navCal = document.getElementById('navCalendar');
+const navChat = document.getElementById('navChat');
+if (navCal && navChat) {
+    navCal.addEventListener('click', () => {
+        navCal.classList.add('active');
+        navChat.classList.remove('active');
+        // show calendar view, hide chat container
+        document.getElementById('calendarView').style.display = 'block';
+        document.getElementById('todoListView').style.display = 'none';
+        document.getElementById('introView').style.display = 'none';
+        document.getElementById('bottomSheet').style.display = 'none';
+        showCalendarView();
+    });
+    navChat.addEventListener('click', () => {
+        navChat.classList.add('active');
+        navCal.classList.remove('active');
+        // show chat container
+        document.getElementById('introView').style.display = 'block';
+        if (document.getElementById('bottomSheet').style.display !== 'block') {
+            // keep intro visible to choose or continue chat
+        }
+        document.getElementById('calendarView').style.display = 'none';
+        document.getElementById('todoListView').style.display = 'none';
+    });
 }

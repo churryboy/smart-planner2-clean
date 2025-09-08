@@ -16,14 +16,8 @@
                 <span class="logo-text">🗓️ 스마트 플래너</span>
             </div>
             <div class="header-actions">
-                <button class="icon-btn" id="calendarViewBtn" title="캘린더 보기">
-                    <i class="fas fa-calendar"></i>
-                </button>
-                <button class="icon-btn" id="todoListViewBtn" title="할일 목록 보기">
-                    <i class="fas fa-list"></i>
-                </button>
-                <button class="icon-btn" id="settingsBtn" title="설정">
-                    <i class="fas fa-cog"></i>
+                <button class="icon-btn" id="profileBtn" title="프로필">
+                    <i class="fas fa-user-circle"></i>
                 </button>
             </div>
         </div>
@@ -266,6 +260,18 @@
             <pre id="workingLog" class="working-log"></pre>
         </div>
     </div>
+
+    <!-- Bottom Tab Navigation -->
+    <nav class="bottom-nav" id="bottomNav">
+        <button class="nav-btn" id="navCalendar">
+            <i class="fas fa-calendar"></i>
+            <span>캘린더</span>
+        </button>
+        <button class="nav-btn active" id="navChat">
+            <i class="fas fa-comments"></i>
+            <span>상담</span>
+        </button>
+    </nav>
 
     <!-- Loading Indicator -->
     <div class="loading-overlay" id="loadingOverlay">
