@@ -31,6 +31,23 @@
 
     <!-- Main Content -->
     <main class="main-content">
+        <!-- Intro View: First interaction - choose mode via buttons -->
+        <div id="introView" class="intro-view" style="display: block;">
+            <div class="intro-card">
+                <h2 class="intro-title">무엇을 도와드릴까요?</h2>
+                <p class="intro-sub">원하는 작업 유형을 선택하세요</p>
+                <div class="button-grid" id="startButtons">
+                    <!-- Goal-tagged buttons -->
+                    <button class="home-btn goal" data-mode="goal" data-id="goal_general">목표 세우기</button>
+                    <button class="home-btn goal" data-mode="goal" data-id="goal_study">공부 목표 잡기</button>
+                    <button class="home-btn goal" data-mode="goal" data-id="goal_habit">생활 습관 만들기</button>
+                    <!-- Task-tagged buttons -->
+                    <button class="home-btn task" data-mode="task" data-id="task_event">일정 만들기</button>
+                    <button class="home-btn task" data-mode="task" data-id="task_todo">할일 만들기</button>
+                    <button class="home-btn task" data-mode="task" data-id="task_ocr">이미지로 일정</button>
+                </div>
+            </div>
+        </div>
         <!-- Calendar View -->
         <div class="calendar-container" id="calendarView">
             <!-- Month Navigation -->
@@ -215,6 +232,42 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Bottom Sheet Chat (Second interaction) -->
+    <div id="bottomSheet" class="bottom-sheet" style="display: none;">
+        <div class="bottom-sheet-header">
+            <div class="bs-title" id="bsTitle">대화</div>
+            <button class="bs-close" id="bsClose"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="bottom-sheet-body">
+            <div id="bsMessages" class="bs-messages"></div>
+            <!-- Output preference (Third interaction) -->
+            <div id="outputPref" class="output-pref">
+                <div class="pref-title">출력 형식 선택</div>
+                <div class="pref-options">
+                    <label><input type="radio" name="pref" value="calendar"> 캘린더</label>
+                    <label><input type="radio" name="pref" value="todo"> 할일</label>
+                    <label><input type="radio" name="pref" value="both"> 둘 다</label>
+                </div>
+                <button id="prefConfirm" class="pref-confirm">확인</button>
+            </div>
+        </div>
+        <div class="bottom-sheet-input">
+            <input id="bsInput" type="text" placeholder="메시지를 입력하세요" />
+            <button id="bsSend" class="bs-send"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <!-- Working View (Console style) -->
+    <div id="workingView" class="working-view" style="display: none;">
+        <div class="working-card">
+            <div class="working-header">
+                <i class="fas fa-terminal"></i>
+                <span>작업 중...</span>
+            </div>
+            <pre id="workingLog" class="working-log"></pre>
         </div>
     </div>
 

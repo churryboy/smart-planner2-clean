@@ -3933,3 +3933,220 @@ async function processCroppedImageForOCR(croppedFile) {
         hideLoading();
     }
 }
+
+// Flow state for new multi-step UX
+let flowState = {
+    mode: null, // 'goal' | 'task'
+    presetId: null,
+    outputType: null, // 'calendar' | 'todo' | 'both'
+    messages: [] // {role:'user'|'assistant', text:string}
+};
+
+function initNewFlowControllers() {
+    const introView = document.getElementById('introView');
+    const bottomSheet = document.getElementById('bottomSheet');
+    const bsTitle = document.getElementById('bsTitle');
+    const bsMessages = document.getElementById('bsMessages');
+    const bsInput = document.getElementById('bsInput');
+    const bsSend = document.getElementById('bsSend');
+    const bsClose = document.getElementById('bsClose');
+    const outputPref = document.getElementById('outputPref');
+    const prefConfirm = document.getElementById('prefConfirm');
+
+    // Initial view: intro only
+    const aiBar = document.querySelector('.ai-input-section');
+    if (aiBar) aiBar.style.display = 'none';
+    const cal = document.getElementById('calendarView');
+    const todoV = document.getElementById('todoListView');
+    if (cal) cal.style.display = 'none';
+    if (todoV) todoV.style.display = 'none';
+    if (introView) introView.style.display = 'block';
+
+    // Start buttons
+    const startButtons = document.getElementById('startButtons');
+    if (startButtons) {
+        startButtons.addEventListener('click', (e) => {
+            const btn = e.target.closest('button.home-btn');
+            if (!btn) return;
+            const mode = btn.dataset.mode; // goal or task
+            const presetId = btn.dataset.id;
+            flowState.mode = mode;
+            flowState.presetId = presetId;
+            // Open bottom sheet without page switch
+            introView.style.display = 'none';
+            bottomSheet.style.display = 'block';
+            bsMessages.innerHTML = '';
+            flowState.messages = [];
+
+            if (mode === 'goal') {
+                bsTitle.textContent = '목표 설정 대화';
+                pushAssistant("어떤 목표를 달성하고 싶나요? 기간과 중요도를 알려주세요. 제가 단계별로 도와드릴게요.");
+                outputPref.style.display = 'block';
+            } else {
+                bsTitle.textContent = '작업 지시';
+                // No special prompt; model should interpret commands directly
+                pushAssistant("원하는 작업을 입력하세요. 이해한 뒤 결과를 만들어 드릴게요.");
+                outputPref.style.display = 'block';
+            }
+        });
+    }
+
+    function pushAssistant(text) {
+        flowState.messages.push({ role: 'assistant', text });
+        const div = document.createElement('div');
+        div.className = 'msg assistant';
+        div.textContent = text;
+        bsMessages.appendChild(div);
+        bsMessages.scrollTop = bsMessages.scrollHeight;
+    }
+
+    function pushUser(text) {
+        flowState.messages.push({ role: 'user', text });
+        const div = document.createElement('div');
+        div.className = 'msg user';
+        div.textContent = text;
+        bsMessages.appendChild(div);
+        bsMessages.scrollTop = bsMessages.scrollHeight;
+    }
+
+    bsSend.addEventListener('click', async () => {
+        const text = bsInput.value.trim();
+        if (!text) return;
+        pushUser(text);
+        bsInput.value = '';
+        await handleLLMTurn();
+    });
+
+    bsInput.addEventListener('keydown', async (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            const text = bsInput.value.trim();
+            if (!text) return;
+            pushUser(text);
+            bsInput.value = '';
+            await handleLLMTurn();
+        }
+    });
+
+    bsClose.addEventListener('click', () => {
+        bottomSheet.style.display = 'none';
+        introView.style.display = 'block';
+        flowState = { mode: null, presetId: null, outputType: null, messages: [] };
+    });
+
+    prefConfirm.addEventListener('click', () => {
+        const selected = document.querySelector('input[name="pref"]:checked');
+        if (!selected) {
+            pushAssistant('출력 형식을 선택해주세요: 캘린더, 할일, 혹은 둘 다.');
+            return;
+        }
+        flowState.outputType = selected.value; // calendar|todo|both
+        pushAssistant(`출력 형식: ${selected.value}로 진행합니다.`);
+    });
+
+    async function handleLLMTurn() {
+        // Build prompt per mode
+        const latest = flowState.messages[flowState.messages.length - 1]?.text || '';
+        let prompt = latest;
+        if (flowState.mode === 'goal') {
+            prompt = `당신은 코치입니다. 아래 사용자의 목표를 단계별로 구체화하고 필요한 일정/할일을 제안하세요. 대화는 간결한 한국어로 진행.
+사용자: ${latest}`;
+        } else if (flowState.mode === 'task') {
+            // No guiding style; direct interpretation
+            prompt = latest;
+        }
+        try {
+            const ai = await callClaudeAPI(prompt);
+            // For this flow, ai may yield event or plain text
+            if (ai && ai.success && (ai.event || ai.events)) {
+                // Apply to calendar immediately, then guide to output step
+                if (ai.event) {
+                    const newEvent = { id: generateId(), ...ai.event };
+                    events.push(newEvent);
+                }
+                if (ai.events && Array.isArray(ai.events)) {
+                    ai.events.forEach(ev => events.push({ id: generateId(), ...ev }));
+                }
+                saveEvents();
+                renderCalendar();
+                pushAssistant('일정을 생성했습니다. 출력 형식을 확인 후 계속 진행하세요.');
+            } else if (ai && ai.success === false && ai.error) {
+                pushAssistant(`오류: ${ai.error}`);
+            } else {
+                // Fallback: echo
+                pushAssistant('내용을 반영했습니다. 출력 형식을 선택 후 확인을 눌러주세요.');
+            }
+        } catch (e) {
+            pushAssistant('서버와 통신 중 오류가 발생했습니다.');
+        }
+    }
+}
+
+// Working view helpers
+function showWorkingView() {
+    document.getElementById('workingView').style.display = 'block';
+    appendWorkingLog('> 작업 시작');
+}
+function hideWorkingView() {
+    document.getElementById('workingView').style.display = 'none';
+}
+function appendWorkingLog(line) {
+    const pre = document.getElementById('workingLog');
+    if (!pre) return;
+    pre.textContent += (pre.textContent ? "\n" : "") + line;
+    pre.scrollTop = pre.scrollHeight;
+}
+
+function proceedAfterConfirm() {
+    // Simulate working phase or stream logs
+    const introView = document.getElementById('introView');
+    const bottomSheet = document.getElementById('bottomSheet');
+    introView.style.display = 'none';
+    bottomSheet.style.display = 'none';
+    showWorkingView();
+
+    const steps = [
+        '분석 중...', '데이터 구조화...', '캘린더/할일 반영...', '완료 정리...'
+    ];
+    let i = 0;
+    const timer = setInterval(() => {
+        if (i < steps.length) {
+            appendWorkingLog(steps[i]);
+            i++;
+        } else {
+            clearInterval(timer);
+            hideWorkingView();
+            // Final display by outputType
+            if (flowState.outputType === 'calendar') {
+                showCalendarView();
+            } else if (flowState.outputType === 'todo') {
+                showTodoListView();
+            } else {
+                // both: show calendar by default and toast
+                showCalendarView();
+                showSuccessMessage('캘린더와 할일에 반영되었습니다');
+            }
+            // Reset flow state
+            flowState = { mode: null, presetId: null, outputType: null, messages: [] };
+        }
+    }, 600);
+}
+
+// Hook confirm to proceed
+(function hookConfirmToProceed(){
+    document.addEventListener('click', (e) => {
+        if (e.target && e.target.id === 'prefConfirm') {
+            if (!flowState.outputType) return; // require selection
+            proceedAfterConfirm();
+        }
+    });
+})();
+
+// Initialize controllers after DOM ready
+(function waitDom(){
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initNewFlowControllers);
+    } else {
+        initNewFlowControllers();
+    }
+})();
