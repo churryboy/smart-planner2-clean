@@ -3980,7 +3980,7 @@ function initNewFlowControllers() {
             flowState.presetId = presetId;
             // Open bottom sheet without full page switch; hide intro via body class
             document.body.classList.add('bs-open');
-            introView.style.display = 'block';
+            introView.style.display = 'none';
             bottomSheet.style.display = 'block';
             bsMessages.innerHTML = '';
             flowState.messages = [];
