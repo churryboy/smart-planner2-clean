@@ -4098,6 +4098,11 @@ function initNewFlowControllers() {
         bsMessages.scrollTop = bsMessages.scrollHeight;
     }
 
+    // IME-safe send handlers
+    let isComposing = false;
+    bsInput.addEventListener('compositionstart', () => { isComposing = true; });
+    bsInput.addEventListener('compositionend', () => { isComposing = false; });
+
     bsSend.addEventListener('click', async () => {
         const text = bsInput.value.trim();
         if (!text) return;
@@ -4108,6 +4113,7 @@ function initNewFlowControllers() {
 
     bsInput.addEventListener('keydown', async (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
+            if (isComposing || e.isComposing || e.keyCode === 229) return; // avoid IME partial commits
             e.preventDefault();
             const text = bsInput.value.trim();
             if (!text) return;
