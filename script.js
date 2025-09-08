@@ -4001,33 +4001,7 @@ function initNewFlowControllers() {
         });
     }
 
-    // Bind custom input button
-    const customInput = document.getElementById('customGoalInput');
-    const customApply = document.getElementById('customGoalApply');
-    if (customInput && customApply) {
-        customInput.addEventListener('input', () => {
-            customApply.disabled = customInput.value.trim().length === 0;
-        });
-        customApply.addEventListener('click', () => {
-            const text = customInput.value.trim();
-            if (!text) return;
-            // Start goal chat seeded with custom text
-            flowState.mode = 'goal';
-            flowState.presetId = 'goal_custom';
-            document.body.classList.add('bs-open');
-            introView.style.display = 'block';
-            if (introView.nextElementSibling !== bottomSheet) {
-                introView.parentNode.insertBefore(bottomSheet, introView.nextSibling);
-            }
-            bottomSheet.style.display = 'block';
-            bsMessages.innerHTML = '';
-            flowState.messages = [];
-            bsTitle.textContent = '목표 설정 대화';
-            pushAssistant('입력하신 목적을 바탕으로 계획을 도와드릴게요. 기간과 중요도를 알려주세요.');
-            pushUser(text);
-            outputPref.style.display = 'block';
-        });
-    }
+    // (Removed) custom input flow
 
     function pushAssistant(text) {
         flowState.messages.push({ role: 'assistant', text });
