@@ -3959,9 +3959,9 @@ function initNewFlowControllers() {
     function collapseIntroCard(selectedText) {
         const introBody = document.getElementById('introBody');
         const selected = document.getElementById('introSelected');
-        if (selected) {
-            selected.textContent = `— ${selectedText}`;
-            selected.style.display = 'inline';
+                if (selected) {
+            selected.textContent = `${selectedText}`;
+            selected.style.display = 'block';
         }
         if (!introBody) return;
         const fullHeight = introBody.scrollHeight;
@@ -4035,23 +4035,15 @@ function initNewFlowControllers() {
             bsMessages.innerHTML = '';
             flowState.messages = [];
 
-            if (mode === 'goal') {
-                // Fold intro and slide-in chat
-                const label = btn.textContent.trim();
-                collapseIntroCard(label);
-                setTimeout(() => {
-                    slideInChat();
-                    bsTitle.textContent = '목표 설정 대화';
-                    pushAssistant("어떤 목표를 달성하고 싶나요? 기간과 중요도를 알려주세요. 제가 단계별로 도와드릴게요.");
-                    outputPref.style.display = 'block';
-                }, 120);
-            } else {
-                // Task mode: keep intro visible, but show chat beneath without folding
+            // Unified behavior for all buttons
+            const label = btn.textContent.trim();
+            collapseIntroCard(label);
+            setTimeout(() => {
                 slideInChat();
-                bsTitle.textContent = '작업 지시';
-                pushAssistant("원하는 작업을 입력하세요. 이해한 뒤 결과를 만들어 드릴게요.");
+                bsTitle.textContent = '목표 설정 대화';
+                pushAssistant("어떤 목표를 달성하고 싶나요? 기간과 중요도를 알려주세요. 제가 단계별로 도와드릴게요.");
                 outputPref.style.display = 'block';
-            }
+            }, 120);
         });
     }
 
