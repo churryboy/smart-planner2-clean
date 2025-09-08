@@ -3974,14 +3974,14 @@ function initNewFlowControllers() {
         startButtons.addEventListener('click', (e) => {
             const btn = e.target.closest('button.home-btn');
             if (!btn) return;
+            if (btn.id === 'customGoalApply') return; // handled separately
             const mode = btn.dataset.mode; // goal or task
             const presetId = btn.dataset.id;
             flowState.mode = mode;
             flowState.presetId = presetId;
-            // Open bottom sheet without full page switch; hide intro via body class
+            // Open chat container beneath intro
             document.body.classList.add('bs-open');
             introView.style.display = 'block';
-            // Insert chat container right after introView
             if (introView.nextElementSibling !== bottomSheet) {
                 introView.parentNode.insertBefore(bottomSheet, introView.nextSibling);
             }
@@ -3995,10 +3995,37 @@ function initNewFlowControllers() {
                 outputPref.style.display = 'block';
             } else {
                 bsTitle.textContent = '작업 지시';
-                // No special prompt; model should interpret commands directly
                 pushAssistant("원하는 작업을 입력하세요. 이해한 뒤 결과를 만들어 드릴게요.");
                 outputPref.style.display = 'block';
             }
+        });
+    }
+
+    // Bind custom input button
+    const customInput = document.getElementById('customGoalInput');
+    const customApply = document.getElementById('customGoalApply');
+    if (customInput && customApply) {
+        customInput.addEventListener('input', () => {
+            customApply.disabled = customInput.value.trim().length === 0;
+        });
+        customApply.addEventListener('click', () => {
+            const text = customInput.value.trim();
+            if (!text) return;
+            // Start goal chat seeded with custom text
+            flowState.mode = 'goal';
+            flowState.presetId = 'goal_custom';
+            document.body.classList.add('bs-open');
+            introView.style.display = 'block';
+            if (introView.nextElementSibling !== bottomSheet) {
+                introView.parentNode.insertBefore(bottomSheet, introView.nextSibling);
+            }
+            bottomSheet.style.display = 'block';
+            bsMessages.innerHTML = '';
+            flowState.messages = [];
+            bsTitle.textContent = '목표 설정 대화';
+            pushAssistant('입력하신 목적을 바탕으로 계획을 도와드릴게요. 기간과 중요도를 알려주세요.');
+            pushUser(text);
+            outputPref.style.display = 'block';
         });
     }
 

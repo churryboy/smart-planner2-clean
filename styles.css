@@ -1208,6 +1208,9 @@ body.crop-modal-open {
 .home-btn.goal { border-left: 0; }
 .home-btn.task { border-left: 0; }
 .home-btn:hover { background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+.home-input-wrap { display: flex; gap: 8px; align-items: stretch; }
+.home-input-btn { flex: 1; border: 1px solid #eee; border-radius: 12px; background: #fff; padding: 10px 12px; font-size: 0.95rem; }
+#customGoalApply:disabled { opacity: 0.5; cursor: not-allowed; }
 
 body.bs-open .intro-view { display: block; }
 
