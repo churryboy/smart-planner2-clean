@@ -3959,6 +3959,7 @@ let flowState = {
 };
 
 function initNewFlowControllers() {
+    window.__chat_ready = false;
     const introView = document.getElementById('introView');
     const bottomSheet = document.getElementById('bottomSheet');
     const bsTitle = document.getElementById('bsTitle');
@@ -4419,7 +4420,12 @@ function enableChatBodyScrollCapture() {
 (function exposeChatController(){
     const controller = {
         open(){
-            try { slideInChat(); } catch(e) { console.warn('slideInChat unavailable yet'); }
+            if (window.__chat_ready) {
+                try { slideInChat(); } catch(e) { console.warn('slideInChat error', e); }
+            } else {
+                window.__chat_pending_open = true;
+                console.warn('slideInChat unavailable yet');
+            }
         },
         close(preserve){
             const bs = document.getElementById('bottomSheet');
@@ -4437,7 +4443,9 @@ function enableChatBodyScrollCapture() {
             resizeBound = false;
         },
         layout(){
-            try { layoutChatPanel(); } catch(e) { console.warn('layoutChatPanel unavailable yet'); }
+            if (window.__chat_ready) {
+                try { layoutChatPanel(); } catch(e) { console.warn('layoutChatPanel error', e); }
+            }
         },
         isOpen(){
             const bs = document.getElementById('bottomSheet');
@@ -4446,3 +4454,11 @@ function enableChatBodyScrollCapture() {
     };
     window.chat = controller;
 })();
+
+// Initialize swipe etc and other handlers end here
+// Mark chat as ready and process any pending open
+window.__chat_ready = true;
+if (window.__chat_pending_open) {
+    try { slideInChat(); } catch{}
+    window.__chat_pending_open = false;
+}
