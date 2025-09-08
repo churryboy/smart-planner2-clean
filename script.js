@@ -3962,6 +3962,10 @@ function initNewFlowControllers() {
     if (todoV) todoV.style.display = 'none';
     if (introView) introView.style.display = 'block';
 
+    // Ensure event list is visible initially
+    const elc = document.querySelector('.event-list-container');
+    if (elc) elc.style.display = 'block';
+
     // Start buttons
     const startButtons = document.getElementById('startButtons');
     if (startButtons) {
@@ -3972,8 +3976,9 @@ function initNewFlowControllers() {
             const presetId = btn.dataset.id;
             flowState.mode = mode;
             flowState.presetId = presetId;
-            // Open bottom sheet without page switch
-            introView.style.display = 'none';
+            // Open bottom sheet without full page switch; hide intro via body class
+            document.body.classList.add('bs-open');
+            introView.style.display = 'block';
             bottomSheet.style.display = 'block';
             bsMessages.innerHTML = '';
             flowState.messages = [];
@@ -4030,6 +4035,7 @@ function initNewFlowControllers() {
 
     bsClose.addEventListener('click', () => {
         bottomSheet.style.display = 'none';
+        document.body.classList.remove('bs-open');
         introView.style.display = 'block';
         flowState = { mode: null, presetId: null, outputType: null, messages: [] };
     });

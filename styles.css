@@ -1209,6 +1209,8 @@ body.crop-modal-open {
 .home-btn.task { border-left: 4px solid #4CAF50; }
 .home-btn:hover { background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
 
+body.bs-open .intro-view { display: none; }
+
 /* Bottom Sheet */
 .bottom-sheet { position: fixed; left: 0; right: 0; bottom: 0; background: white; border-top-left-radius: 16px; border-top-right-radius: 16px; box-shadow: 0 -10px 30px rgba(0,0,0,0.15); z-index: 1100; max-width: 500px; margin: 0 auto; transform: translateY(0); }
 .bottom-sheet-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #eee; }
