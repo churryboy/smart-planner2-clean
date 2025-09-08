@@ -4422,8 +4422,8 @@ function enableChatBodyScrollCapture() {
 (function exposeChatController(){
     const controller = {
         open(){
-            if (window.__chat_ready) {
-                try { slideInChat(); } catch(e) { console.warn('slideInChat error', e); }
+            if (window.__chat_ready && window.__chat_api?.open) {
+                try { window.__chat_api.open(); } catch(e) { console.warn('chat.open error', e); }
             } else {
                 window.__chat_pending_open = true;
                 console.warn('slideInChat unavailable yet');
@@ -4441,12 +4441,12 @@ function enableChatBodyScrollCapture() {
             }
             bs.style.display = 'none';
             document.body.classList.remove('chat-open');
-            try { window.removeEventListener('resize', layoutChatPanel); } catch{}
+            try { window.removeEventListener('resize', window.__chat_api?.layout || (()=>{})); } catch{}
             resizeBound = false;
         },
         layout(){
-            if (window.__chat_ready) {
-                try { layoutChatPanel(); } catch(e) { console.warn('layoutChatPanel error', e); }
+            if (window.__chat_ready && window.__chat_api?.layout) {
+                try { window.__chat_api.layout(); } catch(e) { console.warn('chat.layout error', e); }
             }
         },
         isOpen(){
@@ -4460,7 +4460,12 @@ function enableChatBodyScrollCapture() {
 // Initialize swipe etc and other handlers end here
 // Mark chat as ready and process any pending open
 window.__chat_ready = true;
+// Publish inner functions so ChatController can call them safely
+window.__chat_api = {
+    open: () => slideInChat(),
+    layout: () => layoutChatPanel()
+};
 if (window.__chat_pending_open) {
-    try { slideInChat(); } catch{}
+    try { window.__chat_api.open(); } catch{}
     window.__chat_pending_open = false;
 }
