@@ -1226,11 +1226,7 @@ body.bs-open .intro-view { display: block; }
 #bsInput { flex: 1; border: 1px solid #eee; border-radius: 12px; padding: 10px 12px; font-size: 0.95rem; }
 .bs-send { background: #FF5500; color: #fff; border: none; border-radius: 10px; padding: 10px 12px; cursor: pointer; }
 
-/* Output preference */
-.output-pref { border-top: 1px dashed #eee; padding-top: 12px; }
-.pref-title { font-weight: 600; color: #333; margin-bottom: 8px; }
-.pref-options { display: flex; gap: 12px; color: #555; font-size: 0.9rem; margin-bottom: 8px; }
-.pref-confirm { background: #333; color: white; border: none; border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+
 
 /* Working view */
 .working-view { max-width: 500px; margin: 16px auto; }
