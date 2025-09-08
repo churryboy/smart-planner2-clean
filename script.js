@@ -3956,12 +3956,16 @@ function initNewFlowControllers() {
     const prefConfirm = document.getElementById('prefConfirm');
 
     // Helper: fold intro card
-    function collapseIntroCard(selectedText) {
+        function collapseIntroCard(selectedText) {
         const introBody = document.getElementById('introBody');
         const selected = document.getElementById('introSelected');
-                if (selected) {
+        const introSub = document.querySelector('.intro-sub');
+        if (selected) {
             selected.textContent = `${selectedText}`;
             selected.style.display = 'block';
+        }
+        if (introSub) {
+            introSub.style.display = 'none';
         }
         if (!introBody) return;
         const fullHeight = introBody.scrollHeight;
@@ -3977,9 +3981,13 @@ function initNewFlowControllers() {
     function restoreIntroCard() {
         const introBody = document.getElementById('introBody');
         const selected = document.getElementById('introSelected');
+        const introSub = document.querySelector('.intro-sub');
         if (selected) {
             selected.style.display = 'none';
             selected.textContent = '';
+        }
+        if (introSub) {
+            introSub.style.display = '';
         }
         if (!introBody) return;
         introBody.style.transition = '';
