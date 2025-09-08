@@ -1404,8 +1404,10 @@ function showCalendarView() {
     console.log('📅 Showing calendar view');
     document.getElementById('calendarView').style.display = 'block';
     document.getElementById('todoListView').style.display = 'none';
-    document.getElementById('calendarViewBtn').classList.add('active');
-    document.getElementById('todoListViewBtn').classList.remove('active');
+    const calBtn = document.getElementById('calendarViewBtn');
+    const todoBtn = document.getElementById('todoListViewBtn');
+    if (calBtn) calBtn.classList.add('active');
+    if (todoBtn) todoBtn.classList.remove('active');
     const elc = document.querySelector('.event-list-container');
     if (elc) elc.style.display = 'block';
 }
@@ -1415,8 +1417,10 @@ function showTodoListView() {
     console.log('📋 Showing todo list view');
     document.getElementById('calendarView').style.display = 'none';
     document.getElementById('todoListView').style.display = 'block';
-    document.getElementById('calendarViewBtn').classList.remove('active');
-    document.getElementById('todoListViewBtn').classList.add('active');
+    const calBtn = document.getElementById('calendarViewBtn');
+    const todoBtn = document.getElementById('todoListViewBtn');
+    if (calBtn) calBtn.classList.remove('active');
+    if (todoBtn) todoBtn.classList.add('active');
     showAllTodos();
 }
 
@@ -4358,37 +4362,43 @@ function renderAssistantStreaming(fullText) {
 }
 
 // Bottom nav wiring
-const navCal = document.getElementById('navCalendar');
-const navChat = document.getElementById('navChat');
-if (navCal && navChat) {
-    navCal.addEventListener('click', () => {
-        navCal.classList.add('active');
-        navChat.classList.remove('active');
-        // show calendar view, hide chat container
-        document.getElementById('calendarView').style.display = 'block';
-        document.getElementById('todoListView').style.display = 'none';
-        document.getElementById('introView').style.display = 'none';
-        const bs = document.getElementById('bottomSheet');
-        if (bs) {
-            chatWasOpen = bs.style.display === 'block' || bs.dataset.open === 'true';
-            bs.dataset.open = chatWasOpen ? 'true' : 'false';
-            bs.style.display = 'none';
-        }
-        document.body.classList.remove('chat-open');
-        window.removeEventListener('resize', layoutChatPanel);
-        resizeBound = false;
-        showCalendarView();
-    });
-            navChat.addEventListener('click', () => {
+(function wireBottomNavAfterDefs(){
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', wireNow);
+    } else {
+        wireNow();
+    }
+    function wireNow(){
+        const navCal = document.getElementById('navCalendar');
+        const navChat = document.getElementById('navChat');
+        if (!navCal || !navChat) return;
+        navCal.addEventListener('click', () => {
+            navCal.classList.add('active');
+            navChat.classList.remove('active');
+            document.getElementById('calendarView').style.display = 'block';
+            document.getElementById('todoListView').style.display = 'none';
+            document.getElementById('introView').style.display = 'none';
+            const bs = document.getElementById('bottomSheet');
+            if (bs) {
+                chatWasOpen = bs.style.display === 'block' || bs.dataset.open === 'true';
+                bs.dataset.open = chatWasOpen ? 'true' : 'false';
+                bs.style.display = 'none';
+            }
+            document.body.classList.remove('chat-open');
+            window.removeEventListener('resize', layoutChatPanel);
+            resizeBound = false;
+            showCalendarView();
+        });
+        navChat.addEventListener('click', () => {
             navChat.classList.add('active');
             navCal.classList.remove('active');
-            // show chat container
             document.getElementById('calendarView').style.display = 'none';
             document.getElementById('todoListView').style.display = 'none';
             document.getElementById('introView').style.display = 'block';
             slideInChat();
         });
-}
+    }
+})();
 
 function scrollChatToBottom() {
     const container = document.querySelector('.bottom-sheet-body');
