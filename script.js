@@ -845,8 +845,9 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('🔧 Setting up initial view...');
     showCalendarView();
     
-    // Set initial button state - calendar view is default
-    document.getElementById('calendarViewBtn').classList.add('active');
+    // Set initial button state - calendar view is default (if legacy buttons exist)
+    const legacyCalBtn = document.getElementById('calendarViewBtn');
+    if (legacyCalBtn) legacyCalBtn.classList.add('active');
     console.log('✅ App initialization complete');
 });
 
