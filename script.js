@@ -3955,6 +3955,49 @@ function initNewFlowControllers() {
     const outputPref = document.getElementById('outputPref');
     const prefConfirm = document.getElementById('prefConfirm');
 
+    // Helper: fold intro card
+    function collapseIntroCard() {
+        const introCard = document.querySelector('.intro-card');
+        if (!introCard) return;
+        const fullHeight = introCard.scrollHeight;
+        introCard.style.height = fullHeight + 'px';
+        introCard.style.overflow = 'hidden';
+        introCard.style.transition = 'height 300ms ease, opacity 250ms ease, margin 300ms ease';
+        // force reflow
+        void introCard.offsetHeight;
+        introCard.style.opacity = '0';
+        introCard.style.marginBottom = '0px';
+        introCard.style.height = '0px';
+    }
+
+    // Helper: restore intro card (no animation required)
+    function restoreIntroCard() {
+        const introCard = document.querySelector('.intro-card');
+        if (!introCard) return;
+        introCard.style.transition = '';
+        introCard.style.height = '';
+        introCard.style.opacity = '';
+        introCard.style.marginBottom = '';
+        introCard.style.overflow = '';
+    }
+
+    // Helper: slide chat container in
+    function slideInChat() {
+        if (!bottomSheet) return;
+        bottomSheet.style.display = 'block';
+        bottomSheet.style.opacity = '0';
+        bottomSheet.style.transform = 'translateY(12px)';
+        bottomSheet.style.transition = 'transform 300ms ease, opacity 300ms ease';
+        // insert under introView if needed
+        if (introView && introView.nextElementSibling !== bottomSheet) {
+            introView.parentNode.insertBefore(bottomSheet, introView.nextSibling);
+        }
+        // force reflow
+        void bottomSheet.offsetHeight;
+        bottomSheet.style.opacity = '1';
+        bottomSheet.style.transform = 'translateY(0)';
+    }
+
     // Initial view: intro only
     const aiBar = document.querySelector('.ai-input-section');
     if (aiBar) aiBar.style.display = 'none';
@@ -3974,26 +4017,29 @@ function initNewFlowControllers() {
         startButtons.addEventListener('click', (e) => {
             const btn = e.target.closest('button.home-btn');
             if (!btn) return;
-            if (btn.id === 'customGoalApply') return; // handled separately
+            if (btn.id === 'customGoalApply') return; // handled separately (legacy)
             const mode = btn.dataset.mode; // goal or task
             const presetId = btn.dataset.id;
             flowState.mode = mode;
             flowState.presetId = presetId;
-            // Open chat container beneath intro
             document.body.classList.add('bs-open');
             introView.style.display = 'block';
-            if (introView.nextElementSibling !== bottomSheet) {
-                introView.parentNode.insertBefore(bottomSheet, introView.nextSibling);
-            }
-            bottomSheet.style.display = 'block';
+
             bsMessages.innerHTML = '';
             flowState.messages = [];
 
             if (mode === 'goal') {
-                bsTitle.textContent = '목표 설정 대화';
-                pushAssistant("어떤 목표를 달성하고 싶나요? 기간과 중요도를 알려주세요. 제가 단계별로 도와드릴게요.");
-                outputPref.style.display = 'block';
+                // Fold intro and slide-in chat
+                collapseIntroCard();
+                setTimeout(() => {
+                    slideInChat();
+                    bsTitle.textContent = '목표 설정 대화';
+                    pushAssistant("어떤 목표를 달성하고 싶나요? 기간과 중요도를 알려주세요. 제가 단계별로 도와드릴게요.");
+                    outputPref.style.display = 'block';
+                }, 120);
             } else {
+                // Task mode: keep intro visible, but show chat beneath without folding
+                slideInChat();
                 bsTitle.textContent = '작업 지시';
                 pushAssistant("원하는 작업을 입력하세요. 이해한 뒤 결과를 만들어 드릴게요.");
                 outputPref.style.display = 'block';
@@ -4001,48 +4047,11 @@ function initNewFlowControllers() {
         });
     }
 
-    // (Removed) custom input flow
-
-    function pushAssistant(text) {
-        flowState.messages.push({ role: 'assistant', text });
-        const div = document.createElement('div');
-        div.className = 'msg assistant';
-        div.textContent = text;
-        bsMessages.appendChild(div);
-        bsMessages.scrollTop = bsMessages.scrollHeight;
-    }
-
-    function pushUser(text) {
-        flowState.messages.push({ role: 'user', text });
-        const div = document.createElement('div');
-        div.className = 'msg user';
-        div.textContent = text;
-        bsMessages.appendChild(div);
-        bsMessages.scrollTop = bsMessages.scrollHeight;
-    }
-
-    bsSend.addEventListener('click', async () => {
-        const text = bsInput.value.trim();
-        if (!text) return;
-        pushUser(text);
-        bsInput.value = '';
-        await handleLLMTurn();
-    });
-
-    bsInput.addEventListener('keydown', async (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            const text = bsInput.value.trim();
-            if (!text) return;
-            pushUser(text);
-            bsInput.value = '';
-            await handleLLMTurn();
-        }
-    });
-
+    // Close chat
     bsClose.addEventListener('click', () => {
         bottomSheet.style.display = 'none';
         document.body.classList.remove('bs-open');
+        restoreIntroCard();
         introView.style.display = 'block';
         flowState = { mode: null, presetId: null, outputType: null, messages: [] };
     });
@@ -4093,6 +4102,51 @@ function initNewFlowControllers() {
             pushAssistant('서버와 통신 중 오류가 발생했습니다.');
         }
     }
+
+    function pushAssistant(text) {
+        flowState.messages.push({ role: 'assistant', text });
+        const div = document.createElement('div');
+        div.className = 'msg assistant';
+        div.textContent = text;
+        bsMessages.appendChild(div);
+        bsMessages.scrollTop = bsMessages.scrollHeight;
+    }
+
+    function pushUser(text) {
+        flowState.messages.push({ role: 'user', text });
+        const div = document.createElement('div');
+        div.className = 'msg user';
+        div.textContent = text;
+        bsMessages.appendChild(div);
+        bsMessages.scrollTop = bsMessages.scrollHeight;
+    }
+
+    bsSend.addEventListener('click', async () => {
+        const text = bsInput.value.trim();
+        if (!text) return;
+        pushUser(text);
+        bsInput.value = '';
+        await handleLLMTurn();
+    });
+
+    bsInput.addEventListener('keydown', async (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            const text = bsInput.value.trim();
+            if (!text) return;
+            pushUser(text);
+            bsInput.value = '';
+            await handleLLMTurn();
+        }
+    });
+
+    // Hook confirm to proceed
+    document.addEventListener('click', (e) => {
+        if (e.target && e.target.id === 'prefConfirm') {
+            if (!flowState.outputType) return; // require selection
+            proceedAfterConfirm();
+        }
+    });
 }
 
 // Working view helpers
