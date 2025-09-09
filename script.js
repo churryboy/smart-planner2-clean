@@ -891,23 +891,23 @@ function initializeEventHandlers() {
     // AI Input
     const aiInput = document.getElementById('aiInput');
     const aiSendBtn = document.getElementById('aiSendBtn');
-
+    
     console.log('🔧 AI Input elements:', { aiInput: !!aiInput, aiSendBtn: !!aiSendBtn });
 
     if (aiInput) {
-        // Auto-resize textarea
-        aiInput.addEventListener('input', () => {
-            aiInput.style.height = 'auto';
-            aiInput.style.height = aiInput.scrollHeight + 'px';
-        });
+    // Auto-resize textarea
+    aiInput.addEventListener('input', () => {
+        aiInput.style.height = 'auto';
+        aiInput.style.height = aiInput.scrollHeight + 'px';
+    });
 
-        // Send on Enter (without Shift)
-        aiInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendAIMessage();
-            }
-        });
+    // Send on Enter (without Shift)
+    aiInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendAIMessage();
+        }
+    });
     }
 
     if (aiSendBtn) aiSendBtn.addEventListener('click', sendAIMessage);
@@ -960,7 +960,7 @@ function initializeEventHandlers() {
     if (cropModalEl) cropModalEl.addEventListener('click', (e) => {
         if (e.target.id === 'imageCropModal') cancelCrop();
     });
-
+    
     // Keyboard shortcuts for closing modals
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
@@ -1411,6 +1411,9 @@ function showCalendarView() {
     if (todoBtn) todoBtn.classList.remove('active');
     const elc = document.querySelector('.event-list-container');
     if (elc) elc.style.display = 'block';
+    // Ensure the grid and list refresh after any modal actions
+    try { renderCalendar(); } catch {}
+    try { updateEventList(); } catch {}
 }
 
 // Show todo list view
@@ -1502,7 +1505,7 @@ async function sendAIMessage() {
         aiInput.disabled = false;
         document.getElementById('aiSendBtn').disabled = false;
         aiInput.focus();
-                 hideLoading();
+        hideLoading();
      }
  }
 
@@ -2894,7 +2897,7 @@ function addTodo(recommendationId, eventId) {
     
     // If not found in static recommendations, check dynamic custom todos
     if (!recommendation) {
-        const event = events.find(e => e.id === eventId);
+    const event = events.find(e => e.id === eventId);
         if (event) {
             const customTodos = analyzeEventAndGetTodos(event);
             recommendation = customTodos.find(r => r.id === recommendationId);
@@ -3114,7 +3117,7 @@ function showTodoDetail(todo) {
     
     console.log('🔍 About to show todo detail modal, prevention flag:', preventTodoModalReopen);
     if (!preventTodoModalReopen) {
-        modal.classList.add('active');
+    modal.classList.add('active');
         console.log('✅ Todo detail modal shown');
     } else {
         console.log('🚫 Todo detail modal blocked by prevention flag');
@@ -3424,7 +3427,7 @@ function handleSwipeRight(item) {
             `;
         }
     }, 300);
-}
+} 
 
 // =============================================
 // Schedule Confirmation Modal Functions
@@ -3955,11 +3958,14 @@ let flowState = {
     mode: null, // 'goal' | 'task'
     presetId: null,
     outputType: null, // 'calendar' | 'todo' | 'both'
-    messages: [] // {role:'user'|'assistant', text:string}
+    messages: [], // {role:'user'|'assistant', text:string}
+    proposedTodos: [], // extracted from LLM prescription
+    lastAssistantText: ''
 };
 
 function initNewFlowControllers() {
     window.__chat_ready = false;
+    window.chat_ready = false;
     const introView = document.getElementById('introView');
     const bottomSheet = document.getElementById('bottomSheet');
     const bsTitle = document.getElementById('bsTitle');
@@ -3970,7 +3976,7 @@ function initNewFlowControllers() {
     // Removed output preference UI
 
     // Helper: fold intro card
-        function collapseIntroCard(selectedText) {
+    function collapseIntroCard(selectedText) {
         const introBody = document.getElementById('introBody');
         const selected = document.getElementById('introSelected');
         const introSub = document.querySelector('.intro-sub');
@@ -4062,6 +4068,23 @@ function initNewFlowControllers() {
         }
     }
 
+    function closeChatPanel({ preserveState = false } = {}) {
+        if (!bottomSheet) return;
+        if (preserveState) {
+            chatWasOpen = true;
+            bottomSheet.dataset.open = 'true';
+        } else {
+            chatWasOpen = false;
+            bottomSheet.dataset.open = 'false';
+        }
+        bottomSheet.style.display = 'none';
+        document.body.classList.remove('chat-open');
+        if (resizeBound) {
+            window.removeEventListener('resize', layoutChatPanel);
+            resizeBound = false;
+        }
+    }
+
     // Initial view: intro only
     const aiBar = document.querySelector('.ai-input-section');
     if (aiBar) aiBar.style.display = 'none';
@@ -4098,28 +4121,38 @@ function initNewFlowControllers() {
             setTimeout(() => {
                 slideInChat();
                 bsTitle.textContent = '목표 설정 대화';
-                pushAssistant(getIntroLineForPreset(presetId));
+                pushAssistant('안녕! 우리 같이 성적 상승을 위해서 무엇을 하면 좋을지 계획을 같이 짜보자!');
             }, 120);
         });
     }
 
-    // Close chat
-    bsClose.addEventListener('click', () => {
-        bottomSheet.style.display = 'none';
-        document.body.classList.remove('chat-open');
-        window.removeEventListener('resize', layoutChatPanel);
-        resizeBound = false;
-        restoreIntroCard();
-        introView.style.display = 'block';
-        flowState = { mode: null, presetId: null, outputType: null, messages: [] };
-        bottomSheet.dataset.open = 'false';
-        chatWasOpen = false;
-    });
+    // --- Chat helpers & input handlers ---
+    function pushAssistant(text) {
+        flowState.messages.push({ role: 'assistant', text });
+        const row = document.createElement('div');
+        row.className = 'msg-row assistant';
+        row.innerHTML = `
+            <div class="avatar"><img src="https://i.imgur.com/0QZC3dX.png" alt="assistant"/></div>
+            <div class="bubble assistant"></div>
+        `;
+        row.querySelector('.bubble').textContent = text;
+        bsMessages.appendChild(row);
+        scrollChatToBottom();
+    }
 
-    // Removed: output preference confirm handler
+    function pushUser(text) {
+        flowState.messages.push({ role: 'user', text });
+        const row = document.createElement('div');
+        row.className = 'msg-row user';
+        row.innerHTML = `
+            <div class="bubble user"></div>
+        `;
+        row.querySelector('.bubble').textContent = text;
+        bsMessages.appendChild(row);
+        scrollChatToBottom();
+    }
 
     async function handleLLMTurn() {
-        // Build prompt per mode
         const latest = flowState.messages[flowState.messages.length - 1]?.text || '';
         try {
             const chatRes = await callClaudeChat({
@@ -4134,73 +4167,93 @@ function initNewFlowControllers() {
         }
     }
 
-    function pushAssistant(text) {
-        flowState.messages.push({ role: 'assistant', text });
-        const bsMessages = document.getElementById('bsMessages');
-        const row = document.createElement('div');
-        row.className = 'msg-row assistant';
-        row.innerHTML = `
-            <div class="avatar"><img src="https://i.imgur.com/0QZC3dX.png" alt="assistant"/></div>
-            <div class="bubble assistant"></div>
-        `;
-        row.querySelector('.bubble').textContent = text;
-        bsMessages.appendChild(row);
-        scrollChatToBottom();
-    }
-
-    function pushUser(text) {
-        flowState.messages.push({ role: 'user', text });
-        const bsMessages = document.getElementById('bsMessages');
-        const row = document.createElement('div');
-        row.className = 'msg-row user';
-        row.innerHTML = `
-            <div class="bubble user"></div>
-        `;
-        row.querySelector('.bubble').textContent = text;
-        bsMessages.appendChild(row);
-        scrollChatToBottom();
-    }
-
     // IME-safe send handlers
     let isComposing = false;
-    bsInput.addEventListener('compositionstart', () => { isComposing = true; });
-    bsInput.addEventListener('compositionend', () => { isComposing = false; });
-
-    bsSend.addEventListener('click', async () => {
-        const text = bsInput.value.trim();
-        if (!text) return;
-        pushUser(text);
-        bsInput.value = '';
-        bsInput.disabled = true;
-        (document.getElementById('bsSend')||{}).disabled = true;
-        showTyping();
-        await handleLLMTurn();
-        hideTyping();
-        bsInput.disabled = false;
-        (document.getElementById('bsSend')||{}).disabled = false;
-        bsInput.focus();
-    });
-
-    bsInput.addEventListener('keydown', async (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            if (isComposing || e.isComposing || e.keyCode === 229) return; // avoid IME partial commits
-            e.preventDefault();
+    // Helper: command to open todo modal immediately
+    function isOpenTodoModalCommand(text){
+        if (!text) return false;
+        const t = text.trim();
+        return /^#?투두\s*모달\s*열어줘$/.test(t);
+    }
+    function isPlannerRegisterCommand(text){
+        if (!text) return false;
+        const t = text.trim();
+        return /^#?플래너\s*등록$/.test(t);
+    }
+    if (bsInput) {
+        bsInput.addEventListener('compositionstart', () => { isComposing = true; });
+        bsInput.addEventListener('compositionend', () => { isComposing = false; });
+        bsInput.addEventListener('keydown', async (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                if (isComposing || e.isComposing || e.keyCode === 229) return;
+                e.preventDefault();
+                const text = bsInput.value.trim();
+                if (!text) return;
+                pushUser(text);
+                bsInput.value = '';
+                // Command: open todo modal right away
+                if (isOpenTodoModalCommand(text) || isPlannerRegisterCommand(text)) {
+                    const proposed = (flowState.proposedTodos && flowState.proposedTodos.length)
+                        ? flowState.proposedTodos
+                        : parseProposedTodosFromText(flowState.lastAssistantText || '');
+                    flowState.proposedTodos = proposed;
+                    showProposedTodosEditor(proposed);
+                    return;
+                }
+                bsInput.disabled = true;
+                (document.getElementById('bsSend')||{}).disabled = true;
+                showTyping();
+                await handleLLMTurn();
+                hideTyping();
+                bsInput.disabled = false;
+                (document.getElementById('bsSend')||{}).disabled = false;
+                bsInput.focus();
+            }
+        });
+    }
+    if (bsSend) {
+        bsSend.addEventListener('click', async () => {
             const text = bsInput.value.trim();
             if (!text) return;
             pushUser(text);
             bsInput.value = '';
+            // Command: open todo modal right away
+            if (isOpenTodoModalCommand(text) || isPlannerRegisterCommand(text)) {
+                const proposed = (flowState.proposedTodos && flowState.proposedTodos.length)
+                    ? flowState.proposedTodos
+                    : parseProposedTodosFromText(flowState.lastAssistantText || '');
+                flowState.proposedTodos = proposed;
+                showProposedTodosEditor(proposed);
+                return;
+            }
             bsInput.disabled = true;
-            (document.getElementById('bsSend')||{}).disabled = true;
+            bsSend.disabled = true;
             showTyping();
             await handleLLMTurn();
             hideTyping();
             bsInput.disabled = false;
-            (document.getElementById('bsSend')||{}).disabled = false;
+            bsSend.disabled = false;
             bsInput.focus();
-        }
-    });
+        });
+    }
 
-    // Removed: confirm to proceed handler
+    if (bsClose) {
+        bsClose.addEventListener('click', () => closeChatPanel({ preserveState: false }));
+    }
+
+    // Mark chat as ready and publish bridge API
+    window.__chat_ready = true;
+    window.chat_ready = true;
+    window.__chat_api = {
+        open: () => slideInChat(),
+        close: (opts) => closeChatPanel(opts),
+        layout: () => layoutChatPanel()
+    };
+    window._chat_api = window.__chat_api;
+    if (window.chat_pending_open) {
+        try { window.chat.open(); } catch {}
+        window.chat_pending_open = false;
+    }
 }
 
 // Working view helpers
@@ -4248,7 +4301,7 @@ function proceedAfterConfirm() {
                 showSuccessMessage('캘린더와 할일에 반영되었습니다');
             }
             // Reset flow state
-            flowState = { mode: null, presetId: null, outputType: null, messages: [] };
+            flowState = { mode: null, presetId: null, outputType: null, messages: [], proposedTodos: [], lastAssistantText: '' };
         }
     }, 600);
 }
@@ -4290,30 +4343,14 @@ async function callClaudeChat({ message, presetId, history }) {
     const resp = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, preset: presetId, history })
+        body: JSON.stringify({ message, preset: presetId, history, provider: 'openai' })
     });
     if (!resp.ok) throw new Error('chat API failed');
     return await resp.json();
 }
 
 function getIntroLineForPreset(presetId) {
-    const intro = '안녕하세요! 우리 함께 목표를 달성하기 위한 플래너를 만들어보아요! '; // intro then one question only
-    switch (presetId) {
-        case 'goal_general':
-            return intro + '어느 대학교를 목표로 하고 계신가요?';
-        case 'goal_study':
-            return intro + '수능에서 가장 먼저 올리고 싶은 과목이 무엇인가요?';
-        case 'goal_habit':
-            return intro + '내신에서 가장 보완하고 싶은 과목이 무엇인가요?';
-        case 'task_event':
-            return intro + '어떤 과목의 수행평가를 준비 중이신가요?';
-        case 'task_todo':
-            return intro + '생기부에서 가장 강화하고 싶은 활동 영역이 무엇인가요?';
-        case 'task_academy_homework':
-            return intro + '오늘 처리해야 할 학원 숙제는 어떤 과목인가요?';
-        default:
-            return intro + '가장 먼저 이루고 싶은 목표가 무엇인가요?';
-    }
+    return '';
 }
 
 function showTyping() {
@@ -4351,17 +4388,158 @@ function renderAssistantStreaming(fullText) {
     bsMessages.appendChild(row);
     scrollChatToBottom();
 
-    const chars = Array.from(fullText);
-    let i = 0;
-    const tick = () => {
-        const chunk = chars.slice(i, i + 3).join('');
-        bubble.textContent += chunk;
-        i += 3;
+    // Fast-path: very long texts render immediately to avoid slow typing
+    if (fullText && fullText.length > 800) {
+        const highlighted = fullText.replace(/#플래너\s*등록/g, (m) => `**${m}**`);
+        const html = highlighted.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        bubble.innerHTML = html;
+        flowState.lastAssistantText = fullText;
         scrollChatToBottom();
-        if (i < chars.length) requestAnimationFrame(tick);
+        return;
+    }
+
+    const chars = Array.from(fullText || '');
+    let i = 0;
+    // Larger chunk per frame for faster perceived speed
+    const CHUNK_SIZE = 32;
+    const tick = () => {
+        const chunk = chars.slice(i, i + CHUNK_SIZE).join('');
+        bubble.textContent += chunk;
+        i += CHUNK_SIZE;
+        scrollChatToBottom();
+        if (i < chars.length) {
+            requestAnimationFrame(tick);
+        } else {
+            // After complete, replace occurrences with highlighted HTML
+            const highlighted = bubble.textContent.replace(/#플래너\s*등록/g, (m) => `**${m}**`);
+            const html = highlighted.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+            bubble.innerHTML = html;
+        }
     };
     requestAnimationFrame(tick);
+    // Track last assistant text for downstream parsing
+    flowState.lastAssistantText = fullText;
 }
+
+// Extract proposed todos from the assistant prescription
+function parseProposedTodosFromText(text) {
+    if (!text) return [];
+    // Only parse when the prescription sections are present
+    if (!(text.includes('주간 계획') || text.includes('일일 체크리스트'))) return [];
+    const lines = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+    const todos = [];
+    const bulletRegex = /^([\-\*\d\.]|[✅✔️•▪️•📌🗓️📚📝🔖⭐️➡️👉▶️])\s*(.+)$/;
+    lines.forEach((line) => {
+        const m = line.match(bulletRegex);
+        if (!m) return;
+        const title = m[2].replace(/^[:\-\s]+/, '').trim();
+        if (!title) return;
+        todos.push({ id: generateId(), title, dueDate: '', eventId: null });
+    });
+    return todos;
+}
+
+// Detect affirmative user response in Korean
+function isAffirmative(text) {
+    if (!text) return false;
+    const t = text.trim();
+    const patterns = [
+        /^(응|네|예|좋아|좋습니다|좋아요|해줘|해주세요|입력해줘|등록해줘|그래|맞아|확인)$/,
+        /(해줘|해주세요|입력해줘|등록해줘|좋아요|좋습니다)$/
+    ];
+    return patterns.some((re) => re.test(t));
+}
+
+// Show editable modal for proposed todos using existing #todoModal
+function showProposedTodosEditor(proposed) {
+    const modal = document.getElementById('todoModal');
+    const container = document.getElementById('todoRecommendations');
+    const titleEl = modal.querySelector('.modal-header h3');
+    titleEl.textContent = 'AI 추천 할일 확인';
+
+    if (!Array.isArray(proposed) || proposed.length === 0) {
+        container.innerHTML = `<div style="padding:24px; color:#666;">추천할 일이 없습니다.</div>`;
+    } else {
+        container.innerHTML = proposed.map((t) => {
+            const dateVal = t.dueDate || '';
+            return `
+            <div class="todo-item added" data-proposed-id="${t.id}" style="display:flex; gap:12px; align-items:flex-start;">
+                <div class="todo-content" style="flex:1;">
+                    <input type="text" value="${t.title.replace(/"/g,'&quot;')}" 
+                        class="proposed-title" style="width:100%; padding:8px; border:1px solid #eee; border-radius:8px; margin-bottom:8px;" />
+                    <input type="date" value="${dateVal}" class="proposed-date" style="padding:8px; border:1px solid #eee; border-radius:8px;" />
+                </div>
+                <div class="todo-actions" style="flex-shrink:0; display:flex; gap:8px;">
+                    <button class="todo-btn delete" data-action="remove" title="삭제"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>`;
+        }).join('') + `
+            <div style="margin-top:12px; display:flex; gap:8px;">
+                <button id="addProposedTodo" class="todo-btn add" style="padding:8px 12px;"><i class="fas fa-plus"></i> 추가</button>
+                <button id="confirmProposedTodos" class="todo-btn add" style="background:#FF5500; color:#fff; padding:8px 12px; border-radius:8px;">확인</button>
+            </div>`;
+    }
+
+    // Wire interactions
+    container.onclick = (e) => {
+        const btn = e.target.closest('button[data-action="remove"]');
+        if (btn) {
+            const row = btn.closest('[data-proposed-id]');
+            const id = row?.getAttribute('data-proposed-id');
+            flowState.proposedTodos = flowState.proposedTodos.filter(x => x.id !== id);
+            row?.remove();
+        }
+    };
+    const addBtn = document.getElementById('addProposedTodo');
+    if (addBtn) {
+        addBtn.onclick = () => {
+            const newItem = { id: generateId(), title: '', dueDate: '', eventId: null };
+            flowState.proposedTodos.push(newItem);
+            showProposedTodosEditor(flowState.proposedTodos);
+        };
+    }
+    const confirmBtn = document.getElementById('confirmProposedTodos');
+    if (confirmBtn) {
+        confirmBtn.onclick = () => {
+            // Read current edits from DOM back to state
+            const rows = container.querySelectorAll('[data-proposed-id]');
+            const updated = [];
+            rows.forEach((row) => {
+                const id = row.getAttribute('data-proposed-id');
+                const title = row.querySelector('.proposed-title')?.value?.trim() || '';
+                const dueDate = row.querySelector('.proposed-date')?.value || '';
+                if (title) updated.push({ id, title, dueDate, eventId: null });
+            });
+            flowState.proposedTodos = updated;
+            // Convert to real todos and save
+            updated.forEach((t) => {
+                const newTodo = {
+                    id: generateId(),
+                    recommendationId: 'ai_' + t.id,
+                    eventId: null,
+                    title: t.title,
+                    description: 'AI 처방 항목',
+                    category: 'planning',
+                    dueDate: t.dueDate || new Date().toISOString().slice(0,10),
+                    displayDate: formatDateForDisplay(t.dueDate ? new Date(t.dueDate) : new Date()),
+                    addedAt: new Date().toISOString()
+                };
+                todos.push(newTodo);
+            });
+            saveTodos();
+            renderCalendar();
+            updateEventList();
+            closeTodoModal();
+            showSuccessMessage('처방이 할일로 추가되었습니다');
+        };
+    }
+
+    modal.classList.add('active');
+    modal.style.display = 'flex';
+    modal.style.zIndex = '2000';
+}
+
+// Affirmative detection handled within bsInput/bsSend handlers (legacy hook removed)
 
 // Bottom nav wiring
 (function wireBottomNavAfterDefs(){
@@ -4380,7 +4558,9 @@ function renderAssistantStreaming(fullText) {
             document.getElementById('calendarView').style.display = 'block';
             document.getElementById('todoListView').style.display = 'none';
             document.getElementById('introView').style.display = 'none';
-            window.chat.close(true);
+            if (window.chat && typeof window.chat.close === 'function') {
+                try { window.chat.close(true); } catch {}
+            }
             showCalendarView();
         });
         navChat.addEventListener('click', () => {
@@ -4391,7 +4571,9 @@ function renderAssistantStreaming(fullText) {
             document.getElementById('introView').style.display = 'block';
             const elc = document.querySelector('.event-list-container');
             if (elc) elc.style.display = 'none';
-            window.chat.open();
+            if (window.chat && typeof window.chat.open === 'function') {
+                try { window.chat.open(); } catch {}
+            }
         });
     }
 })();
@@ -4469,3 +4651,38 @@ if (window.__chat_pending_open) {
     try { window.__chat_api.open(); } catch{}
     window.__chat_pending_open = false;
 }
+
+// Fallback delegated handlers for bottom nav (robust against timing issues)
+document.addEventListener('click', (e) => {
+    const calBtn = e.target.closest('#navCalendar');
+    if (calBtn) {
+        console.log('🗓️ navCalendar clicked');
+        try { document.getElementById('navCalendar')?.classList.add('active'); } catch{}
+        try { document.getElementById('navChat')?.classList.remove('active'); } catch{}
+        const calView = document.getElementById('calendarView');
+        const todoView = document.getElementById('todoListView');
+        const introView = document.getElementById('introView');
+        if (calView) calView.style.display = 'block';
+        if (todoView) todoView.style.display = 'none';
+        if (introView) introView.style.display = 'none';
+        if (window.chat && typeof window.chat.close === 'function') { try { window.chat.close(true); } catch{} }
+        showCalendarView();
+        return;
+    }
+    const chatBtn = e.target.closest('#navChat');
+    if (chatBtn) {
+        console.log('💬 navChat clicked');
+        try { document.getElementById('navChat')?.classList.add('active'); } catch{}
+        try { document.getElementById('navCalendar')?.classList.remove('active'); } catch{}
+        const calView = document.getElementById('calendarView');
+        const todoView = document.getElementById('todoListView');
+        const introView = document.getElementById('introView');
+        if (calView) calView.style.display = 'none';
+        if (todoView) todoView.style.display = 'none';
+        if (introView) introView.style.display = 'block';
+        const elc = document.querySelector('.event-list-container');
+        if (elc) elc.style.display = 'none';
+        if (window.chat && typeof window.chat.open === 'function') { try { window.chat.open(); } catch{} }
+        return;
+    }
+});

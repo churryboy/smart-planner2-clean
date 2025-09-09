@@ -66,129 +66,83 @@ if (!CLAUDE_API_KEY) {
 }
 
 // System prompt for calendar input
-const SYSTEM_PROMPT = `당신은 사용자가 자연어로 일정을 입력할 때 도움을 주는 스마트 캘린더 어시스턴트입니다.
+const SYSTEM_PROMPT = ``;
 
-사용자가 자연어로 일정이나 이벤트를 설명하거나 이미지(특히 한국 학교 캘린더)를 업로드하면 다음을 수행해야 합니다:
-1. 모든 이벤트 세부사항 정확히 추출 (제목, 날짜, 시간, 설명)
-2. 날짜와 시간을 정확하게 파악 (특히 한국어 날짜 형식)
-3. 학교 행사명을 정확히 인식 (재량휴업일, 중간고사, 기말고사, 수학여행 등)
-4. 모든 텍스트를 놓치지 않고 구조화된 응답 생성
+// Study buddy (schoolmate) chat system prompt
+const CHAT_SYSTEM_PROMPT = `너는 학습 코치야.
+나는 [과목명] 시험에서 100점을 받고 싶어. 현재 시점은 [현재 월]이고, 목표 시험은 [목표 월]에 있어.
 
-여러 일정이 있는 경우 다음 JSON 형식으로 응답하세요:
-{
-    "success": true,
-    "events": [
-        {
-            "title": "이벤트 제목1",
-            "date": "YYYY-MM-DD",
-            "time": "HH:MM",
-            "description": "이벤트 설명1",
-            "allDay": false
-        },
-        {
-            "title": "이벤트 제목2",
-            "date": "YYYY-MM-DD",
-            "time": null,
-            "description": "이벤트 설명2",
-            "allDay": true
+1. 장기적으로 해야할 일, 중장기 적으로 해야할 일, 단기적으로 해야할 일 전략을 각각 제시해줘. (예: 장기=6개월 이상, 중기=3개월, 단기=1개월)
+2. 각 전략 안에서는 내가 해야 할 주요 활동(개념 정리, 기출, 오답노트 등)을 구체적으로 나눠줘.
+3. 마지막에는 이번 달(혹은 이번 주)의 일일 학습 계획을 아주 구체적으로 만들어줘. (데일리 태스크 단위: "9월 10일 → 교과서 1단원 시 읽고 주제 정리 + 문제 20문제")
+4. 위 결과물을 만들어내기 위해서 필요한 정보가 있다면, 적극적으로 학생한테 질문해서 수집해
+
+- 마지막 문장은 꼭 다음으로 끝내: "위 계획으로 캘린더에 등록해드릴까요?"`;
+
+// Ensure only one question per assistant turn unless it's prescription stage
+function enforceSingleQuestion(text) {
+    try {
+        if (!text) return text;
+        // Allow full content for prescription stage
+        if (text.includes('주간 계획') || text.includes('일일 체크리스트') || text.includes('#플래너 등록')) {
+            return text;
         }
-    ],
-    "message": "일정들이 추가되었습니다"
+        // Find the earliest question mark (supports full-width too)
+        const q1 = text.indexOf('?');
+        const q2 = text.indexOf('？');
+        const idx = (q1 === -1) ? q2 : (q2 === -1 ? q1 : Math.min(q1, q2));
+        if (idx === -1) return text; // no question found
+        const kept = text.slice(0, idx + 1).trim();
+        return kept;
+    } catch (e) {
+        return text;
+    }
 }
-
-단일 일정인 경우 다음 JSON 형식으로 응답하세요:
-{
-    "success": true,
-    "event": {
-        "title": "이벤트 제목",
-        "date": "YYYY-MM-DD",
-        "time": "HH:MM",
-        "description": "이벤트 설명",
-        "allDay": false
-    },
-    "message": "일정이 추가되었습니다"
-}
-
-시간이 명시되지 않은 경우 allDay를 true로 설정하고 time을 null로 설정하세요.
-오늘 날짜는 ${(() => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-})()}입니다.
-현재 한국 시간은 ${new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}입니다.
-현재 년도는 ${new Date().getFullYear()}년이므로 모든 날짜는 이 년도 기준으로 계산하세요.
-
-예시:
-- "내일 오후 2시에 회의" → 내일 날짜, 14:00
-- "9월 10일에 수학시험" → 2024-09-10, allDay: true
-- "다음주 월요일에 출장" → 다음주 월요일 날짜, allDay: true
-- "금요일 저녁 7시 저녁약속" → 이번주 금요일, 19:00
-
-중요한 날짜 계산 규칙:
-- "9월 1일" = 2025-09-01 (현재 년도 기준)
-- "내일" = 오늘 날짜 + 1일 (정확히 2025-09-01)
-- "모레" = 오늘 날짜 + 2일
-- 월/일 형식은 현재 년도(2025) 기준으로 변환
-- 과거 월은 다음 년도로 계산하지 말고 현재 년도 우선
-
-중요: 반드시 유효한 JSON 형식으로만 응답하세요.`;
-
-// Counselor chat system prompt
-const CHAT_SYSTEM_PROMPT = `You are a school counsellor. Your job is not to take the order, but to consult the user and generate a personalized output.
-Use a warm, thoughtful tone of voice with light humor and encouragement.
-ALWAYS ask only one question per turn (단 한 가지 질문만). Avoid multi-question sentences. Wait for the user’s reply before asking the next question.
-Ask at least 5 questions across the conversation to learn about the user. Ensure the final output will include at least 2 specific, personal elements gathered from the conversation (e.g., subject strengths, schedule constraints, preferred study style).
-Keep conversations concise and in natural Korean.
-Your very first reply must briefly introduce yourself as the user’s 학교 진로/학습 상담 선생님, then ask just one opening question relevant to the chosen topic.
-When you feel you have enough information, ask the closing question exactly as:
-"지금까지 얘기나눈 것을 바탕으로 구체적인 플래너를 만들어주려고 하는데 괜찮을까요^^?"`;
 
 // Shared function to make Claude API requests
 async function makeClaudeRequest(requestData) {
-    const options = {
-        hostname: 'api.anthropic.com',
-        port: 443,
-        path: '/v1/messages',
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': CLAUDE_API_KEY,
-            'anthropic-version': '2023-06-01',
-            'Content-Length': Buffer.byteLength(requestData)
-        }
-    };
+        const options = {
+            hostname: 'api.anthropic.com',
+            port: 443,
+            path: '/v1/messages',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': CLAUDE_API_KEY,
+                'anthropic-version': '2023-06-01',
+                'Content-Length': Buffer.byteLength(requestData)
+            }
+        };
 
-    const claudeResponse = await new Promise((resolve, reject) => {
-        const req = https.request(options, (res) => {
-            let data = '';
-            
-            res.on('data', (chunk) => {
-                data += chunk;
-            });
-            
-            res.on('end', () => {
-                if (res.statusCode >= 200 && res.statusCode < 300) {
-                    try {
-                        const parsedData = JSON.parse(data);
-                        resolve(parsedData);
-                    } catch (e) {
-                        reject(new Error('Invalid JSON response'));
+        const claudeResponse = await new Promise((resolve, reject) => {
+            const req = https.request(options, (res) => {
+                let data = '';
+                
+                res.on('data', (chunk) => {
+                    data += chunk;
+                });
+                
+                res.on('end', () => {
+                    if (res.statusCode >= 200 && res.statusCode < 300) {
+                        try {
+                            const parsedData = JSON.parse(data);
+                            resolve(parsedData);
+                        } catch (e) {
+                            reject(new Error('Invalid JSON response'));
+                        }
+                    } else {
+                        reject(new Error(`Claude API error: ${res.statusCode} - ${data}`));
                     }
-                } else {
-                    reject(new Error(`Claude API error: ${res.statusCode} - ${data}`));
-                }
+                });
             });
+            
+            req.on('error', (error) => {
+                reject(error);
+            });
+            
+            req.write(requestData);
+            req.end();
         });
-        
-        req.on('error', (error) => {
-            reject(error);
-        });
-        
-        req.write(requestData);
-        req.end();
-    });
 
     return claudeResponse;
 }
@@ -206,8 +160,9 @@ async function makeOpenAIChatRequest({ system, messages }) {
         }
     };
 
+    const model = process.env.OPENAI_MODEL || 'gpt-4o';
     const body = JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: model,
         temperature: 0.6,
         messages: [
             { role: 'system', content: system },
@@ -338,7 +293,7 @@ function parseKoreanScheduleText(text) {
     return null;
 }
 
-// Free-form chat endpoint (counsellor tone)
+// Free-form chat endpoint (study buddy tone)
 app.post('/api/claude-chat', async (req, res) => {
     try {
         if (!CLAUDE_API_KEY) {
@@ -352,9 +307,21 @@ app.post('/api/claude-chat', async (req, res) => {
         const chatMessages = [];
         // Optional topic hint
         let system = CHAT_SYSTEM_PROMPT;
-        if (preset) {
-            system += `\nTopic preset: ${preset}`;
-        }
+        // Subject constraint by preset
+        try {
+            const presetToSubject = {
+                goal_general: '영어',
+                goal_study: '국어',
+                goal_habit: '수학',
+                goal_event: '사탐',
+                goal_todo: '과탐',
+                goal_academy_homework: '음악'
+            };
+            const subject = presetToSubject && preset ? presetToSubject[preset] : undefined;
+            if (subject) {
+                system = `${system}\n\n대화 주제(과목): ${subject}\n- 오직 ${subject} 성적 향상을 위한 계획만 제시해.\n- 다른 과목은 언급하지 마.\n- 질문, 계획, 일일 과업 모두 ${subject} 기준으로 작성.`;
+            }
+        } catch (_) { /* noop */ }
         if (Array.isArray(history)) {
             history.forEach(m => {
                 const role = m.role === 'assistant' ? 'assistant' : 'user';
@@ -371,7 +338,7 @@ app.post('/api/claude-chat', async (req, res) => {
         });
 
         const claudeResponse = await makeClaudeRequest(requestData);
-        const responseContent = claudeResponse.content?.[0]?.text || '';
+        let responseContent = claudeResponse.content?.[0]?.text || '';
         res.json({ success: true, text: responseContent });
     } catch (error) {
         console.error('Claude Chat API error:', error);
@@ -387,7 +354,21 @@ app.post('/api/chat', async (req, res) => {
 
         // Build system and messages
         let system = CHAT_SYSTEM_PROMPT;
-        if (preset) system += `\nTopic preset: ${preset}`;
+        // Subject constraint by preset
+        try {
+            const presetToSubject = {
+                goal_general: '영어',
+                goal_study: '국어',
+                goal_habit: '수학',
+                goal_event: '사탐',
+                goal_todo: '과탐',
+                goal_academy_homework: '음악'
+            };
+            const subject = presetToSubject && preset ? presetToSubject[preset] : undefined;
+            if (subject) {
+                system = `${system}\n\n대화 주제(과목): ${subject}\n- 오직 ${subject} 성적 향상을 위한 계획만 제시해.\n- 다른 과목은 언급하지 마.\n- 질문, 계획, 일일 과업 모두 ${subject} 기준으로 작성.`;
+            }
+        } catch (_) { /* noop */ }
         const chatMessages = Array.isArray(history) ? history.map(m => ({
             role: m.role === 'assistant' ? 'assistant' : 'user',
             content: m.text
@@ -395,6 +376,9 @@ app.post('/api/chat', async (req, res) => {
         chatMessages.push({ role: 'user', content: message });
 
         // Provider selection
+        if (provider === 'openai' && !OPENAI_API_KEY) {
+            return res.status(500).json({ error: 'OpenAI API key not configured' });
+        }
         const wantOpenAI = provider === 'openai' || (!provider && OPENAI_API_KEY);
         if (wantOpenAI && OPENAI_API_KEY) {
             const resp = await makeOpenAIChatRequest({ system, messages: chatMessages });
@@ -410,7 +394,7 @@ app.post('/api/chat', async (req, res) => {
             messages: chatMessages
         });
         const claudeResponse = await makeClaudeRequest(requestData);
-        const responseContent = claudeResponse.content?.[0]?.text || '';
+        let responseContent = claudeResponse.content?.[0]?.text || '';
         return res.json({ success: true, text: responseContent });
     } catch (error) {
         console.error('Chat API error:', error);
